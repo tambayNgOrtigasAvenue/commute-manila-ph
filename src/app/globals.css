@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@plugin "@tailwindcss/forms";
+
+@theme {
+  --font-inter: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-space-grotesk: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --color-surface: #f9f9ff;
+  --color-on-primary-fixed-variant: #0040a2;
+  --color-on-primary-fixed: #001848;
+  --color-error-container: #ffdad6;
+  --color-surface-container-highest: #d7e2ff;
+  --color-secondary-fixed-dim: #ffb781;
+  --color-surface-bright: #f9f9ff;
+  --color-primary-fixed-dim: #b2c5ff;
+  --color-outline: #737685;
+  --color-on-secondary-fixed-variant: #6f3800;
+  --color-surface-variant: #d7e2ff;
+  --color-secondary-fixed: #ffdcc4;
+  --color-on-tertiary-fixed: #002113;
+  --color-surface-container-low: #f1f3ff;
+  --color-outline-variant: #c3c6d6;
+  --color-tertiary-fixed: #8df7c1;
+  --color-secondary-container: #f88400;
+  --color-on-secondary-container: #5b2d00;
+  --color-inverse-primary: #b2c5ff;
+  --color-on-background: #041b3c;
+  --color-on-tertiary-fixed-variant: #005235;
+  --color-secondary: #924c00;
+  --color-surface-container-lowest: #ffffff;
+  --color-inverse-on-surface: #edf0ff;
+  --color-primary-container: #0052cc;
+  --color-surface-dim: #cadaff;
+  --color-on-surface: #041b3c;
+  --color-primary: #003d9b;
+  --color-on-secondary-fixed: #2f1400;
+  --color-on-primary: #ffffff;
+  --color-on-error-container: #93000a;
+  --color-surface-container-high: #e0e8ff;
+  --color-on-primary-container: #c4d2ff;
+  --color-tertiary-container: #006844;
+  --color-on-secondary: #ffffff;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-fixed-dim: #71dba6;
+  --color-surface-container: #e8edff;
+  --color-error: #ba1a1a;
+  --color-background: #f9f9ff;
+  --color-tertiary: #004e32;
+  --color-on-error: #ffffff;
+  --color-inverse-surface: #1d3052;
+  --color-surface-tint: #0c56d0;
+  --color-primary-fixed: #dae2ff;
+  --color-on-tertiary-container: #7de7b2;
+  --color-on-surface-variant: #434654;
+
+  --spacing-gutter: 16px;
+  --spacing-margin: 20px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-on-surface);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.map-gradient-overlay {
+  background: linear-gradient(to bottom, rgba(249, 249, 255, 0.9) 0%, rgba(249, 249, 255, 0) 20%);
+}
+
+.route-path {
+  stroke-dasharray: 8;
+}
+
+/* Leaflet Custom Styles */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 10;
 }

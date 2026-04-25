@@ -1,65 +1,301 @@
-import Image from "next/image";
+'use client';
+
+import dynamic from 'next/dynamic';
+import { Navigation as NavIcon, Search, Bell, User, LayoutDashboard, AlertTriangle, CreditCard, Bike, MessageSquare, ChevronRight, LocateFixed, Layers, Map as MapIcon, Users, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { searchRoutes, Route, calculateFare, voteRoute } from '@/lib/routing';
+import { supabase } from '@/lib/supabase';
+import { Sidebar, TopBar } from '@/components/Navigation';
+
+// Dynamic import for Map to avoid SSR issues
+const Map = dynamic(() => import('@/components/Map'), { 
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-surface-container-low animate-pulse flex items-center justify-center text-outline font-space">Loading Map...</div>
+});
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState('map');
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
+  const [routes, setRoutes] = useState<Route[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [alerts, setAlerts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
+  const fetchAlerts = async () => {
+    const { data } = await supabase.from('alerts').select('*').eq('is_active', true);
+    if (data) setAlerts(data);
+  };
+
+  const handleSearch = async () => {
+    console.log("Search button clicked with:", { origin, destination });
+    if (!origin && !destination) return;
+    setIsLoading(true);
+    try {
+      const results = await searchRoutes(origin, destination);
+      console.log("Search results received:", results);
+      setRoutes(results);
+    } catch (err) {
+      console.error("Search failed:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVote = async (id: string, type: 'up' | 'down') => {
+    await voteRoute(id, type);
+    handleSearch();
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="font-inter antialiased bg-background text-on-surface">
+      <TopBar />
+      <Sidebar activePath="/" />
+
+      {/* Main Content Canvas */}
+      <main className="pt-16 pb-20 md:pb-0 md:pl-64 min-h-screen">
+        <div className="relative h-[409px] md:h-[512px] overflow-hidden">
+          {/* Map Visualization */}
+          <Map />
+          <div className="absolute inset-0 map-gradient-overlay pointer-events-none z-20"></div>
+          
+          {/* Map Floating Controls */}
+          <div className="absolute top-4 right-4 flex flex-col gap-2 z-30">
+            <button className="bg-white p-3 rounded-xl shadow-lg hover:bg-surface-container-low transition-colors text-primary">
+              <LocateFixed className="w-6 h-6" />
+            </button>
+            <button className="bg-white p-3 rounded-xl shadow-lg hover:bg-surface-container-low transition-colors text-primary">
+              <Layers className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Search Panel Overlay */}
+          <div className="absolute top-4 left-4 z-30 w-72 md:w-80 space-y-2 hidden md:block">
+            <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-outline-variant">
+              <div className="space-y-3">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border-2 border-blue-700"></span>
+                  <input 
+                    className="w-full pl-8 pr-10 py-2 bg-surface-container-low border-none rounded-xl text-sm outline-none" 
+                    placeholder="Origin (e.g. Cubao)" 
+                    value={origin}
+                    onChange={(e) => setOrigin(e.target.value)}
+                  />
+                  <button 
+                    onClick={() => {
+                      if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition((position) => {
+                          setOrigin(`${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
+                        });
+                      }
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-primary"
+                  >
+                    <LocateFixed className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-sm"></span>
+                  <input 
+                    className="w-full pl-8 pr-4 py-2 bg-surface-container-low border-none rounded-xl text-sm outline-none" 
+                    placeholder="Destination (e.g. BGC)" 
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                  />
+                </div>
+                <button 
+                  onClick={handleSearch}
+                  className="w-full py-2 bg-primary text-on-primary rounded-xl font-bold text-sm hover:opacity-90 transition-all shadow-md active:scale-95"
+                >
+                  {isLoading ? 'Searching...' : 'Find Route'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Alert/Status Preview */}
+          <div className="absolute bottom-4 left-4 right-4 md:left-6 md:right-auto md:w-80 z-30">
+            {alerts.length > 0 ? (
+              <div className="bg-error-container text-on-error-container p-4 rounded-2xl shadow-xl border border-error/20 flex items-start gap-3">
+                <AlertTriangle className="w-6 h-6 flex-shrink-0" />
+                <div>
+                  <h4 className="font-bold text-sm">Traffic Alert: {alerts[0].type}</h4>
+                  <p className="text-xs">{alerts[0].description}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white/95 backdrop-blur shadow-xl border border-outline-variant p-4 rounded-2xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-tertiary font-bold uppercase tracking-wider">System Status</span>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-xs font-semibold">Routes Online</span>
+                  </div>
+                </div>
+                <h3 className="font-space text-lg font-bold text-on-surface">Metro Manila Network</h3>
+                <p className="text-sm text-on-surface-variant">Live updates from r/HowToGetTherePH</p>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="px-4 py-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+            {/* Left Column: Route Search Results */}
+            <div className="lg:col-span-7 space-y-gutter">
+              <div className="flex items-center justify-between">
+                <h2 className="font-space text-2xl font-bold text-on-surface">
+                  {routes.length > 0 ? `Results for ${origin || destination}` : 'Popular Routes'}
+                </h2>
+              </div>
+              
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="bg-white border border-outline-variant p-5 rounded-2xl animate-pulse h-40"></div>
+                  ))}
+                </div>
+              ) : routes.length > 0 ? (
+                <div className="space-y-4">
+                  {routes.map((route) => (
+                    <div key={route.id} className="bg-white border border-outline-variant p-5 rounded-2xl shadow-sm hover:shadow-md transition-all">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-full uppercase tracking-tighter mb-2 inline-block">
+                            {route.vehicle_type.replace('_', ' ')}
+                          </span>
+                          <h4 className="font-space font-bold text-lg">{route.raw_origin} to {route.raw_destination}</h4>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-on-surface">P{calculateFare(route.vehicle_type, route.distance_km || 5)}</p>
+                          <p className="text-[10px] text-outline uppercase font-bold tracking-widest">Est. Fare</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2 mb-6">
+                        {route.steps.map((step, idx) => (
+                          <div key={idx} className="flex items-start gap-3">
+                            <div className="w-1 h-full bg-slate-200 rounded-full mt-2"></div>
+                            <p className="text-sm text-on-surface-variant">{step}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center justify-between border-t pt-4">
+                        <div className="flex items-center gap-4">
+                          <button onClick={() => handleVote(route.id, 'up')} className="flex items-center gap-1 text-outline hover:text-green-600 transition-colors">
+                            <ThumbsUp className="w-4 h-4" />
+                            <span className="text-xs font-bold">{route.upvotes}</span>
+                          </button>
+                          <button onClick={() => handleVote(route.id, 'down')} className="flex items-center gap-1 text-outline hover:text-red-600 transition-colors">
+                            <ThumbsDown className="w-4 h-4" />
+                            <span className="text-xs font-bold">{route.downvotes}</span>
+                          </button>
+                        </div>
+                        <span className="text-[10px] text-outline font-bold italic">Source: {route.data_source}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (origin || destination) ? (
+                <div className="bg-white border border-outline-variant p-10 rounded-2xl text-center">
+                  <NavIcon className="w-12 h-12 text-outline mx-auto mb-4" />
+                  <h3 className="font-space font-bold text-lg mb-2">No routes found</h3>
+                  <p className="text-sm text-on-surface-variant max-w-xs mx-auto">
+                    We couldn't find a direct match for "{origin} {destination}". Try searching for major landmarks like "Cubao", "Makati", or "BGC".
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+                  <HubCard 
+                    title="MRT-3 Ayala Station" 
+                    desc="Direct access to Northbound platform. Covered rack."
+                    available="12/40"
+                    icon={<CreditCard className="w-6 h-6" />}
+                    tags={['CCTV', 'Covered']}
+                  />
+                  <HubCard 
+                    title="SM North EDSA Hub" 
+                    desc="Grounded level parking with 24/7 security guard."
+                    available="3/50"
+                    icon={<CreditCard className="w-6 h-6" />}
+                    variant="limited"
+                    tags={['Guarded', 'Tools']}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Alerts & Info */}
+            <div className="lg:col-span-5 space-y-gutter">
+              <h2 className="font-space text-2xl font-bold text-on-surface">Live Traffic Alerts</h2>
+              <div className="space-y-4">
+                {alerts.length > 0 ? alerts.map(alert => (
+                  <div key={alert.id} className="bg-surface-container-low border border-outline-variant p-4 rounded-xl flex items-start gap-3">
+                    <div className="p-2 bg-error-container rounded-lg">
+                      <AlertTriangle className="w-5 h-5 text-error" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm">{alert.type}</p>
+                      <p className="text-xs text-on-surface-variant">{alert.description}</p>
+                      <p className="text-[10px] text-outline mt-1 italic">Active since {new Date(alert.created_at).toLocaleTimeString()}</p>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="bg-tertiary-container/10 border border-tertiary/20 p-4 rounded-xl text-center">
+                    <p className="text-sm font-bold text-tertiary">All roads are currently clear.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </main>
+
+      {/* BottomNavBar (Mobile Only) */}
+      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-safe h-16 bg-white border-t border-slate-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] md:hidden">
+        <MobileNavItem icon={<MapIcon className="w-6 h-6" />} label="Map" onClick={() => setActiveTab('map')} active={activeTab === 'map'} />
+        <MobileNavItem icon={<NavIcon className="w-6 h-6" />} label="Routes" onClick={() => setActiveTab('routes')} active={activeTab === 'routes'} />
+        <MobileNavItem icon={<Users className="w-6 h-6" />} label="Crowd" onClick={() => setActiveTab('crowd')} active={activeTab === 'crowd'} />
+        <MobileNavItem icon={<Bike className="w-6 h-6" />} label="Bike" onClick={() => setActiveTab('bike')} active={activeTab === 'bike'} />
+      </nav>
+    </div>
+  );
+}
+
+function MobileNavItem({ icon, label, active = false, onClick }: { icon: React.ReactNode, label: string, active?: boolean, onClick: () => void }) {
+  return (
+    <div 
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center px-3 py-1 font-space text-[10px] font-medium transition-all rounded-xl cursor-pointer ${active ? 'text-blue-700 bg-blue-50' : 'text-slate-500'}`}
+    >
+      {icon}
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function HubCard({ title, desc, available, icon, variant = 'available', tags }: { title: string, desc: string, available: string, icon: React.ReactNode, variant?: 'available' | 'limited', tags: string[] }) {
+  return (
+    <div className="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl hover:shadow-md transition-all group">
+      <div className="flex justify-between items-start mb-4">
+        <div className="w-12 h-12 bg-primary-fixed-dim rounded-lg flex items-center justify-center text-primary">
+          {icon}
+        </div>
+        <span className={`${variant === 'available' ? 'bg-tertiary-fixed text-on-tertiary-fixed' : 'bg-secondary-fixed text-on-secondary-fixed'} text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-tight`}>
+          {variant === 'available' ? 'Available' : 'Limited'}: {available}
+        </span>
+      </div>
+      <h4 className="font-space font-bold text-md text-on-surface mb-1">{title}</h4>
+      <p className="text-xs text-on-surface-variant mb-4">{desc}</p>
+      <div className="flex flex-wrap gap-2">
+        {tags.map(tag => (
+          <span key={tag} className="flex items-center gap-1 text-[10px] font-bold bg-surface-container px-2 py-1 rounded border border-outline-variant text-on-surface-variant">
+            {tag}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
