@@ -20,6 +20,13 @@ export default function Home() {
   const [routes, setRoutes] = useState<Route[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [alerts, setAlerts] = useState<any[]>([]);
+  
+  // Map Filters
+  const [filters, setFilters] = useState({
+    terminals: true,
+    boundaries: false,
+    highways: false
+  });
 
   useEffect(() => {
     fetchAlerts();
@@ -31,12 +38,10 @@ export default function Home() {
   };
 
   const handleSearch = async () => {
-    console.log("Search button clicked with:", { origin, destination });
     if (!origin && !destination) return;
     setIsLoading(true);
     try {
       const results = await searchRoutes(origin, destination);
-      console.log("Search results received:", results);
       setRoutes(results);
     } catch (err) {
       console.error("Search failed:", err);
@@ -59,17 +64,56 @@ export default function Home() {
       <main className="pt-16 pb-20 md:pb-0 md:pl-64 min-h-screen">
         <div className="relative h-[409px] md:h-[512px] overflow-hidden">
           {/* Map Visualization */}
-          <Map />
+          <Map 
+            showTerminals={filters.terminals} 
+            showBoundaries={filters.boundaries} 
+            showHighways={filters.highways} 
+          />
           <div className="absolute inset-0 map-gradient-overlay pointer-events-none z-20"></div>
           
           {/* Map Floating Controls */}
           <div className="absolute top-4 right-4 flex flex-col gap-2 z-30">
-            <button className="bg-white p-3 rounded-xl shadow-lg hover:bg-surface-container-low transition-colors text-primary">
+            <button 
+              onClick={() => {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition((position) => {
+                    // This would ideally center the map, but for now we'll just log
+                    console.log("Current position:", position.coords);
+                  });
+                }
+              }}
+              className="bg-white p-3 rounded-xl shadow-lg hover:bg-surface-container-low transition-colors text-primary"
+            >
               <LocateFixed className="w-6 h-6" />
             </button>
-            <button className="bg-white p-3 rounded-xl shadow-lg hover:bg-surface-container-low transition-colors text-primary">
-              <Layers className="w-6 h-6" />
-            </button>
+            
+            <div className="relative group">
+              <button className="bg-white p-3 rounded-xl shadow-lg hover:bg-surface-container-low transition-colors text-primary">
+                <Layers className="w-6 h-6" />
+              </button>
+              
+              {/* Layer Filters Menu */}
+              <div className="absolute right-0 top-12 bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-2xl border border-outline-variant w-48 hidden group-hover:block hover:block transition-all z-50">
+                <p className="text-[10px] font-bold text-outline uppercase tracking-widest mb-2 px-1">Map Filters</p>
+                <div className="space-y-1">
+                  <FilterToggle 
+                    label="Terminals" 
+                    active={filters.terminals} 
+                    onClick={() => setFilters({...filters, terminals: !filters.terminals})} 
+                  />
+                  <FilterToggle 
+                    label="City Boundaries" 
+                    active={filters.boundaries} 
+                    onClick={() => setFilters({...filters, boundaries: !filters.boundaries})} 
+                  />
+                  <FilterToggle 
+                    label="Main Highways" 
+                    active={filters.highways} 
+                    onClick={() => setFilters({...filters, highways: !filters.highways})} 
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Search Panel Overlay */}
@@ -132,11 +176,11 @@ export default function Home() {
                   <span className="text-xs text-tertiary font-bold uppercase tracking-wider">System Status</span>
                   <div className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span className="text-xs font-semibold">Routes Online</span>
+                    <span className="text-xs font-semibold">Network Live</span>
                   </div>
                 </div>
-                <h3 className="font-space text-lg font-bold text-on-surface">Metro Manila Network</h3>
-                <p className="text-sm text-on-surface-variant">Live updates from r/HowToGetTherePH</p>
+                <h3 className="font-space text-lg font-bold text-on-surface">Transit Explorer</h3>
+                <p className="text-sm text-on-surface-variant">Exploring Metro Manila transport hubs</p>
               </div>
             )}
           </div>
@@ -148,7 +192,7 @@ export default function Home() {
             <div className="lg:col-span-7 space-y-gutter">
               <div className="flex items-center justify-between">
                 <h2 className="font-space text-2xl font-bold text-on-surface">
-                  {routes.length > 0 ? `Results for ${origin || destination}` : 'Popular Routes'}
+                  {routes.length > 0 ? `Results for ${origin || destination}` : 'Major Hubs'}
                 </h2>
               </div>
               
@@ -261,6 +305,20 @@ export default function Home() {
         <MobileNavItem icon={<Bike className="w-6 h-6" />} label="Bike" onClick={() => setActiveTab('bike')} active={activeTab === 'bike'} />
       </nav>
     </div>
+  );
+}
+
+function FilterToggle({ label, active, onClick }: { label: string, active: boolean, onClick: () => void }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+        active ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50'
+      }`}
+    >
+      <span>{label}</span>
+      <div className={`w-3 h-3 rounded-full border-2 ${active ? 'bg-blue-600 border-blue-700' : 'border-slate-300'}`}></div>
+    </button>
   );
 }
 

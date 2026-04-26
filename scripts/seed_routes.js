@@ -45,7 +45,7 @@ const dummyRoutes = [
 
 async function seed() {
   console.log('Seeding dummy routes...');
-  const { data, error } = await supabase.from('routes').insert(dummyRoutes).execute();
+  const { data, error } = await supabase.from('routes').insert(dummyRoutes);
   
   if (error) {
     console.error('Error seeding:', error.message);

@@ -13,29 +13,36 @@ export interface Route {
 }
 
 export async function searchRoutes(origin: string, destination: string): Promise<Route[]> {
-  console.log(`Searching for routes: ${origin} -> ${destination}`);
+  const o = origin.trim();
+  const d = destination.trim();
   
+  console.log(`Searching for routes with: origin="${o}", destination="${d}"`);
+  
+  if (!o && !d) return [];
+
   let query = supabase.from('routes').select('*');
 
-  if (origin && destination) {
-    // Search for routes that contain both origin and destination in any order
-    query = query.or(`raw_origin.ilike.%${origin}%,raw_destination.ilike.%${origin}%,raw_origin.ilike.%${destination}%,raw_destination.ilike.%${destination}%`);
-  } else if (origin) {
-    query = query.or(`raw_origin.ilike.%${origin}%,raw_destination.ilike.%${origin}%`);
-  } else if (destination) {
-    query = query.or(`raw_origin.ilike.%${destination}%,raw_destination.ilike.%${destination}%`);
+  if (o && d) {
+    // Search for routes where BOTH terms appear somewhere in origin or destination
+    // Note: Supabase .or() with complex conditions can be picky. 
+    // We'll search for things that match EITHER and then filter or just keep it simple.
+    query = query.or(`raw_origin.ilike.%${o}%,raw_destination.ilike.%${o}%,raw_origin.ilike.%${d}%,raw_destination.ilike.%${d}%`);
   } else {
-    return [];
+    const term = o || d;
+    query = query.or(`raw_origin.ilike.%${term}%,raw_destination.ilike.%${term}%`);
   }
 
-  const { data, error } = await query.limit(20);
+  const { data, error } = await query.order('upvotes', { ascending: false }).limit(20);
 
   if (error) {
-    console.error('Supabase error:', error.message);
+    console.error('Supabase Search Error:', error);
     return [];
   }
 
-  console.log(`Found ${data?.length || 0} routes`);
+  if (!data || data.length === 0) {
+    console.warn('No routes found in database for these terms.');
+  }
+
   return data as Route[];
 }
 
