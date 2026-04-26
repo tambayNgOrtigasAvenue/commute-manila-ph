@@ -7,6 +7,16 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 // Fix for default marker icons in Leaflet
+// This delete/merge trick forces Leaflet to stop looking for local files
+if (typeof window !== 'undefined') {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  });
+}
+
 const createIcon = (color: string) => new L.Icon({
   iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -29,6 +39,7 @@ interface MapProps {
   showTerminals: boolean;
   showBoundaries: boolean;
   showHighways: boolean;
+  showBarangays: boolean;
 }
 
 export default function Map({ showTerminals, showBoundaries, showHighways }: MapProps) {
@@ -51,6 +62,7 @@ export default function Map({ showTerminals, showBoundaries, showHighways }: Map
   }, [showTerminals, showBoundaries]);
 
   const fetchTerminals = async () => {
+    // change this into fetching api response later
     const { data, error } = await supabase
       .from('locations')
       .select('name, type, coordinates');
@@ -75,9 +87,9 @@ export default function Map({ showTerminals, showBoundaries, showHighways }: Map
 
   const fetchBoundaries = async () => {
     try {
-      // Corrected URL for NCR city boundaries (using high-res GeoJSON for reliable parsing)
-      const res = await fetch('https://raw.githubusercontent.com/faeldon/philippines-json-maps/master/2023/geojson/municities/municities-region-ph130000000.geo.json');
-      
+      // Request level 6 (Cities) which matches the OSM admin_level in the seeded data
+      const res = await fetch('/api/boundaries?level=6');
+
       if (!res.ok) {
         throw new Error(`Failed to fetch boundaries: ${res.status}`);
       }
@@ -88,6 +100,22 @@ export default function Map({ showTerminals, showBoundaries, showHighways }: Map
       console.error("Failed to fetch boundaries:", e);
     }
   };
+
+  const fetchBarangays = async () => {
+    try{
+      
+    } catch (error){
+      console.error("Failed to fetch boundaries:", error);
+    }
+    const res = await fetch('/api/boundaries?level=10');
+    
+    if (!res.ok) {
+      throw new Error(`Failed to fetch boundaries: ${res.status}`);
+    }
+
+    const data = await res.json();
+    setBoundaries(data);
+  }
 
   return (
     <MapContainer 
@@ -104,12 +132,23 @@ export default function Map({ showTerminals, showBoundaries, showHighways }: Map
       {showBoundaries && boundaries && (
         <GeoJSON 
           data={boundaries} 
+          filter={(feature) => {
+            // ONLY show Polygons/MultiPolygons for boundaries
+            // This hides the pins if the data contains points
+            return feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon';
+          }}
           style={{
-            color: '#3b82f6',
+            color: '#2563eb', // Blue-600
             weight: 2,
             fillColor: '#3b82f6',
-            fillOpacity: 0.1
+            fillOpacity: 0.1,
+            dashArray: '5, 5' // Makes it a dashed line
           }} 
+          onEachFeature={(feature, layer) => {
+            if (feature.properties && feature.properties.name) {
+              layer.bindPopup(`<b class="font-space">${feature.properties.name}</b>`);
+            }
+          }}
         />
       )}
 
