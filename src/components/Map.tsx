@@ -39,7 +39,7 @@ interface MapProps {
   showTerminals: boolean;
   showBoundaries: boolean;
   showHighways: boolean;
-  showBarangays: boolean;
+  showBarangays?: boolean;
 }
 
 export default function Map({ showTerminals, showBoundaries, showHighways }: MapProps) {
