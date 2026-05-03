@@ -24,7 +24,7 @@ export function Sidebar({ activePath }: { activePath: string }) {
   return (
     <aside className="hidden md:flex flex-col fixed left-0 top-0 h-full z-40 overflow-y-auto bg-slate-50 w-64 border-r border-slate-200 pt-20">
       <div className="px-6 mb-6">
-        <p className="font-space text-lg font-bold text-blue-700">ManilaTransit</p>
+        <p className="font-space text-lg font-bold text-blue-700">Commute Manila</p>
         <p className="text-xs text-outline">Reliable Urban Navigation</p>
       </div>
       <nav className="flex-1">
@@ -47,7 +47,7 @@ export function TopBar() {
   return (
     <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm font-space">
       <div className="flex items-center gap-2">
-        <Link href="/" className="text-xl font-bold tracking-tighter text-blue-700">ManilaTransit</Link>
+        <Link href="/" className="text-xl font-bold tracking-tighter text-blue-700">Commute Manila</Link>
       </div>
       <div className="flex-1 max-w-md mx-8 hidden md:block">
         <div className="relative flex items-center bg-surface-container-low px-4 py-2 rounded-full border border-outline-variant">
