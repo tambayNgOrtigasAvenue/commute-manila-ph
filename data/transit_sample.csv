@@ -1,0 +1,8 @@
+origin,destination,mode,route_name,fare_regular,fare_discounted,distance_km,earliest_travel_time,last_travel_time,frequency
+"Fairview, Quezon City","SM City North Edsa, Quezon City",Ordinary City Bus,via Commonwealth Ave,35,28,12.0,5:00 AM,11:00 PM,Every 5-10 min
+"Monumento, Caloocan City","Ayala Center, Makati City",EDSA Carousel Bus,EDSA Busway - North Ave to Ayala Station,36,28.75,15.0,5:00 AM,10:00 PM,Every 3-5 min
+"UP Diliman","Philcoa",Traditional Jeepney,UP-Philcoa Route,13,10.4,3.5,5:00 AM,10:00 PM,Every 5-8 min
+"Alabang (Starmall)","Ayala Center, Makati City",P2P Bus,via SLEX,150,120,25.0,5:00 AM,9:00 PM,Every 30-60 min
+"North Avenue MRT-3 Station, Quezon City","Taft Avenue MRT-3 Station, Pasay City",MRT-3,North Ave -> Quezon Ave -> GMA Kamuning -> Araneta Center-Cubao -> Santolan-Annapolis -> Ortigas -> Shaw Boulevard -> Boni -> Guadalupe -> Buendia -> Ayala -> Magallanes -> Taft Ave,28,22.4,17.5,5:00 AM,11:00 PM,Every 8-12 min
+"NAIA Terminal 3, Pasay City","SM Megamall (Ortigas), Mandaluyong City",TNVS (Grab Sedan),via Skyway - EDSA,269,269,12.0,12:00 AM (24/7),11:59 PM (24/7),On-demand booking (1-10 min ETA)
+"Escolta (Lawton), Manila","Guadalupe, Makati City",Pasig River Ferry,Escolta-Guadalupe Ferry Route,50,40,8.0,6:00 AM,5:00 PM,Every 30-45 min

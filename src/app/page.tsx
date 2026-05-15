@@ -1,11 +1,12 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Navigation as NavIcon, Search, Bell, User, LayoutDashboard, AlertTriangle, CreditCard, Bike, MessageSquare, ChevronRight, LocateFixed, Layers, Map as MapIcon, Users, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Navigation as NavIcon, AlertTriangle, CreditCard, Bike, LocateFixed, Layers, Map as MapIcon, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { searchRoutes, Route, calculateFare, voteRoute } from '@/lib/routing';
+import { TripOption } from '@/lib/routing';
 import { supabase } from '@/lib/supabase';
 import { Sidebar, TopBar } from '@/components/Navigation';
+import type { MapSelection } from '@/components/Map';
 
 // Dynamic import for Map to avoid SSR issues
 const Map = dynamic(() => import('@/components/Map'), { 
@@ -17,9 +18,12 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('map');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
-  const [routes, setRoutes] = useState<Route[]>([]);
+  const [trips, setTrips] = useState<TripOption[]>([]);
+  const [selectedTrip, setSelectedTrip] = useState<TripOption | null>(null);
+  const [userOrigin, setUserOrigin] = useState<{ lat: number; lng: number } | null>(null);
+  const [useDiscounted, setUseDiscounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<{ id: string; type: string; description: string; created_at: string }[]>([]);
   
   // Map Filters
   const [filters, setFilters] = useState({
@@ -40,20 +44,35 @@ export default function Home() {
   const handleSearch = async () => {
     if (!origin && !destination) return;
     setIsLoading(true);
+    setSelectedTrip(null);
     try {
-      const results = await searchRoutes(origin, destination);
-      setRoutes(results);
+      const params = new URLSearchParams({ origin, destination });
+      if (userOrigin) {
+        params.set('olat', String(userOrigin.lat));
+        params.set('olng', String(userOrigin.lng));
+      }
+      const res = await fetch(`/api/trips/search?${params}`);
+      const data = await res.json();
+      const results = (data.results || []) as TripOption[];
+      setTrips(results);
+      if (results.length > 0) {
+        setSelectedTrip(results[0]);
+      }
+      if (data.geocoded?.origin && !userOrigin) {
+        setUserOrigin(data.geocoded.origin);
+      }
     } catch (err) {
-      console.error("Search failed:", err);
+      console.error('Search failed:', err);
+      setTrips([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleVote = async (id: string, type: 'up' | 'down') => {
-    await voteRoute(id, type);
-    handleSearch();
-  };
+  const mapSelection: MapSelection | null =
+    selectedTrip
+      ? { trip: selectedTrip, userOrigin: userOrigin ?? undefined }
+      : null;
 
   return (
     <div className="font-inter antialiased bg-background text-on-surface">
@@ -64,11 +83,14 @@ export default function Home() {
       <main className="pt-16 pb-20 md:pb-0 md:pl-64 min-h-screen">
         <div className="relative h-[409px] md:h-[512px] overflow-hidden">
           {/* Map Visualization */}
-          <Map 
-            showTerminals={filters.terminals} 
-            showBoundaries={filters.boundaries} 
-            showHighways={filters.highways} 
-          />
+          <div className="absolute inset-0 z-10">
+            <Map
+              showTerminals={filters.terminals}
+              showBoundaries={filters.boundaries}
+              showHighways={filters.highways}
+              selection={mapSelection}
+            />
+          </div>
           <div className="absolute inset-0 map-gradient-overlay pointer-events-none z-20"></div>
           
           {/* Map Floating Controls */}
@@ -77,8 +99,10 @@ export default function Home() {
               onClick={() => {
                 if (navigator.geolocation) {
                   navigator.geolocation.getCurrentPosition((position) => {
-                    // This would ideally center the map, but for now we'll just log
-                    console.log("Current position:", position.coords);
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    setUserOrigin({ lat, lng });
+                    setOrigin(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
                   });
                 }
               }}
@@ -128,11 +152,14 @@ export default function Home() {
                     value={origin}
                     onChange={(e) => setOrigin(e.target.value)}
                   />
-                  <button 
+                  <button
                     onClick={() => {
                       if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition((position) => {
-                          setOrigin(`${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`);
+                          const lat = position.coords.latitude;
+                          const lng = position.coords.longitude;
+                          setUserOrigin({ lat, lng });
+                          setOrigin(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
                         });
                       }
                     }}
@@ -190,57 +217,78 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
             {/* Left Column: Route Search Results */}
             <div className="lg:col-span-7 space-y-gutter">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-space text-2xl font-bold text-on-surface">
-                  {routes.length > 0 ? `Results for ${origin || destination}` : 'Major Hubs'}
+                  {trips.length > 0 ? `Options: ${origin || '—'} → ${destination || '—'}` : 'Major Hubs'}
                 </h2>
+                {trips.length > 0 && (
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useDiscounted}
+                      onChange={(e) => setUseDiscounted(e.target.checked)}
+                      className="rounded border-outline-variant"
+                    />
+                    <span className="text-on-surface-variant">Student / senior / PWD fare</span>
+                  </label>
+                )}
               </div>
-              
+
               {isLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="bg-white border border-outline-variant p-5 rounded-2xl animate-pulse h-40"></div>
                   ))}
                 </div>
-              ) : routes.length > 0 ? (
+              ) : trips.length > 0 ? (
                 <div className="space-y-4">
-                  {routes.map((route) => (
-                    <div key={route.id} className="bg-white border border-outline-variant p-5 rounded-2xl shadow-sm hover:shadow-md transition-all">
+                  {trips.map((trip) => {
+                    const fare = useDiscounted ? trip.fareDiscounted : trip.fareRegular;
+                    const isSelected = selectedTrip?.id === trip.id;
+                    return (
+                      <button
+                        key={trip.id}
+                        type="button"
+                        onClick={() => setSelectedTrip(trip)}
+                        className={`w-full text-left bg-white border p-5 rounded-2xl shadow-sm hover:shadow-md transition-all ${
+                          isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-outline-variant'
+                        }`}
+                      >
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-full uppercase tracking-tighter mb-2 inline-block">
-                            {route.vehicle_type.replace('_', ' ')}
+                            {trip.modeLabel}
                           </span>
-                          <h4 className="font-space font-bold text-lg">{route.raw_origin} to {route.raw_destination}</h4>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-on-surface">P{calculateFare(route.vehicle_type, route.distance_km || 5)}</p>
-                          <p className="text-[10px] text-outline uppercase font-bold tracking-widest">Est. Fare</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2 mb-6">
-                        {route.steps.map((step, idx) => (
-                          <div key={idx} className="flex items-start gap-3">
-                            <div className="w-1 h-full bg-slate-200 rounded-full mt-2"></div>
-                            <p className="text-sm text-on-surface-variant">{step}</p>
+                          <h4 className="font-space font-bold text-lg">{trip.originName} → {trip.destName}</h4>
+                            <p className="text-sm text-on-surface-variant mt-1">{trip.lineName}</p>
+                            {(trip.distanceKm != null || trip.frequency) && (
+                              <p className="text-xs text-outline mt-1">
+                                {trip.distanceKm != null && `${trip.distanceKm} km`}
+                                {trip.distanceKm != null && trip.frequency && ' · '}
+                                {trip.frequency}
+                                {trip.earliestTravelTime && (
+                                  <>
+                                    {' · '}
+                                    {trip.operates24_7 ? '24/7' : `${trip.earliestTravelTime}–${trip.lastTravelTime}`}
+                                  </>
+                                )}
+                              </p>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                      <div className="flex items-center justify-between border-t pt-4">
-                        <div className="flex items-center gap-4">
-                          <button onClick={() => handleVote(route.id, 'up')} className="flex items-center gap-1 text-outline hover:text-green-600 transition-colors">
-                            <ThumbsUp className="w-4 h-4" />
-                            <span className="text-xs font-bold">{route.upvotes}</span>
-                          </button>
-                          <button onClick={() => handleVote(route.id, 'down')} className="flex items-center gap-1 text-outline hover:text-red-600 transition-colors">
-                            <ThumbsDown className="w-4 h-4" />
-                            <span className="text-xs font-bold">{route.downvotes}</span>
-                          </button>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-on-surface">₱{fare.toFixed(2)}</p>
+                          <p className="text-[10px] text-outline uppercase font-bold tracking-widest">{useDiscounted ? 'Discounted' : 'Regular'}</p>
                         </div>
-                        <span className="text-[10px] text-outline font-bold italic">Source: {route.data_source}</span>
                       </div>
-                    </div>
-                  ))}
+                      {trip.walkLeg && (
+                        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
+                          Walk ~{Math.round(trip.walkLeg.distanceM)} m to board
+                        </p>
+                      )}
+                      <p className="text-[10px] text-outline font-bold italic mt-2">Source: {trip.source}</p>
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (origin || destination) ? (
                 <div className="bg-white border border-outline-variant p-10 rounded-2xl text-center">

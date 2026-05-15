@@ -1,3 +1,6 @@
+-- Legacy bootstrap schema. For transit trip options, run:
+-- supabase/migrations/20260515000000_transit_trip_options.sql
+
 -- Enable PostGIS extension
 CREATE EXTENSION IF NOT EXISTS postgis;
 

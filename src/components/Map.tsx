@@ -1,15 +1,15 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useId } from 'react';
 import { supabase } from '@/lib/supabase';
+import MapFitBounds from './MapFitBounds';
+import type { TripOption } from '@/lib/routing';
 
-// Fix for default marker icons in Leaflet
-// This delete/merge trick forces Leaflet to stop looking for local files
 if (typeof window !== 'undefined') {
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
     iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -17,164 +17,275 @@ if (typeof window !== 'undefined') {
   });
 }
 
-const createIcon = (color: string) => new L.Icon({
-  iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
+const createIcon = (color: string) =>
+  new L.Icon({
+    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+  });
 
 const icons = {
   terminal: createIcon('blue'),
   station: createIcon('blue'),
   jeepney_hub: createIcon('blue'),
-  user: createIcon('red')
+  user: createIcon('red'),
+  board: createIcon('green'),
 };
 
 const ManilaCenter: [number, number] = [14.5995, 120.9842];
+
+export interface MapSelection {
+  trip: TripOption;
+  userOrigin?: { lat: number; lng: number };
+}
 
 interface MapProps {
   showTerminals: boolean;
   showBoundaries: boolean;
   showHighways: boolean;
-  showBarangays?: boolean;
+  selection?: MapSelection | null;
 }
 
-export default function Map({ showTerminals, showBoundaries, showHighways }: MapProps) {
-  const [locations, setLocations] = useState<any[]>([]);
-  const [boundaries, setBoundaries] = useState<any>(null);
+function pathToLatLngs(path: TripOption['pathGeojson']): [number, number][] {
+  if (!path?.coordinates?.length) return [];
+  return path.coordinates.map((c) => [c[1], c[0]] as [number, number]);
+}
+
+function MapPlaceholder() {
+  return (
+    <div className="h-full w-full min-h-[200px] bg-surface-container-low animate-pulse flex items-center justify-center text-outline font-space">
+      Loading map…
+    </div>
+  );
+}
+
+function CommuteMapLayers({
+  showTerminals,
+  showBoundaries,
+  showHighways,
+  selection,
+}: MapProps) {
+  const [locations, setLocations] = useState<
+    { name: string; type: string; lat: number; lng: number }[]
+  >([]);
+  const [boundaries, setBoundaries] = useState<GeoJSON.FeatureCollection | null>(null);
 
   useEffect(() => {
-    // Resize fix
-    window.dispatchEvent(new Event('resize'));
-    
     if (showTerminals) {
       fetchTerminals();
     } else {
       setLocations([]);
     }
+  }, [showTerminals]);
 
-    if (showBoundaries && !boundaries) {
+  useEffect(() => {
+    if (showBoundaries) {
       fetchBoundaries();
+    } else {
+      setBoundaries(null);
     }
-  }, [showTerminals, showBoundaries]);
+  }, [showBoundaries]);
 
   const fetchTerminals = async () => {
-    // change this into fetching api response later
-    const { data, error } = await supabase
-      .from('locations')
-      .select('name, type, coordinates');
-    
+    const { data } = await supabase.from('locations').select('name, type, coordinates');
+
     if (data) {
-      const parsed = data.map(loc => {
-        try {
-          if (!loc.coordinates || typeof loc.coordinates !== 'string') return null;
-          const match = loc.coordinates.match(/POINT\(([-\d.]+) ([\d.]+)\)/);
-          if (!match) return null;
-          const lng = parseFloat(match[1]);
-          const lat = parseFloat(match[2]);
-          if (isNaN(lat) || isNaN(lng)) return null;
-          return { ...loc, lat, lng };
-        } catch (e) {
-          return null;
-        }
-      }).filter(loc => loc !== null);
+      const parsed = data
+        .map((loc) => {
+          try {
+            if (!loc.coordinates || typeof loc.coordinates !== 'string') return null;
+            const match = loc.coordinates.match(/POINT\(([-\d.]+) ([\d.]+)\)/);
+            if (!match) return null;
+            const lng = parseFloat(match[1]);
+            const lat = parseFloat(match[2]);
+            if (isNaN(lat) || isNaN(lng)) return null;
+            return { ...loc, lat, lng };
+          } catch {
+            return null;
+          }
+        })
+        .filter((loc) => loc !== null) as { name: string; type: string; lat: number; lng: number }[];
       setLocations(parsed);
     }
   };
 
   const fetchBoundaries = async () => {
     try {
-      // Request level 6 (Cities) which matches the OSM admin_level in the seeded data
       const res = await fetch('/api/boundaries?level=6');
-
-      if (!res.ok) {
-        throw new Error(`Failed to fetch boundaries: ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`Failed to fetch boundaries: ${res.status}`);
       const data = await res.json();
-      setBoundaries(data);
+      setBoundaries(data as GeoJSON.FeatureCollection);
     } catch (e) {
-      console.error("Failed to fetch boundaries:", e);
+      console.error('Failed to fetch boundaries:', e);
     }
   };
 
-  const fetchBarangays = async () => {
-    try{
-      
-    } catch (error){
-      console.error("Failed to fetch boundaries:", error);
+  const transitPositions = useMemo(() => {
+    if (!selection?.trip) return [];
+    const trip = selection.trip;
+    const fromPath = pathToLatLngs(trip.pathGeojson);
+    if (fromPath.length >= 2) return fromPath;
+    if (trip.originLat && trip.destLat) {
+      return [
+        [trip.originLat, trip.originLng] as [number, number],
+        [trip.destLat, trip.destLng] as [number, number],
+      ];
     }
-    const res = await fetch('/api/boundaries?level=10');
-    
-    if (!res.ok) {
-      throw new Error(`Failed to fetch boundaries: ${res.status}`);
-    }
+    return [];
+  }, [selection]);
 
-    const data = await res.json();
-    setBoundaries(data);
-  }
+  const walkPositions = useMemo((): [number, number][] => {
+    const walk = selection?.trip.walkLeg;
+    if (!walk) return [];
+    return [walk.from, walk.to];
+  }, [selection]);
+
+  const fitPositions = useMemo((): [number, number][] => {
+    const pts: [number, number][] = [];
+    if (selection?.userOrigin) {
+      pts.push([selection.userOrigin.lat, selection.userOrigin.lng]);
+    }
+    pts.push(...transitPositions);
+    pts.push(...walkPositions);
+    if (selection?.trip.boardLat) {
+      pts.push([selection.trip.boardLat, selection.trip.boardLng]);
+    }
+    return pts;
+  }, [selection, transitPositions, walkPositions]);
 
   return (
-    <MapContainer 
-      center={ManilaCenter} 
-      zoom={12} 
-      scrollWheelZoom={true}
-      className="h-full w-full"
-    >
+    <>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        opacity={showHighways ? 0.55 : 1}
       />
 
+      {fitPositions.length > 0 && <MapFitBounds positions={fitPositions} />}
+
       {showBoundaries && boundaries && (
-        <GeoJSON 
-          data={boundaries} 
-          filter={(feature) => {
-            // ONLY show Polygons/MultiPolygons for boundaries
-            // This hides the pins if the data contains points
-            return feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon';
-          }}
+        <GeoJSON
+          key="boundaries"
+          data={boundaries}
+          filter={(feature) =>
+            feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon'
+          }
           style={{
-            color: '#2563eb', // Blue-600
+            color: '#2563eb',
             weight: 2,
             fillColor: '#3b82f6',
             fillOpacity: 0.1,
-            dashArray: '5, 5' // Makes it a dashed line
-          }} 
+            dashArray: '5, 5',
+          }}
           onEachFeature={(feature, layer) => {
-            if (feature.properties && feature.properties.name) {
+            if (feature.properties?.name) {
               layer.bindPopup(`<b class="font-space">${feature.properties.name}</b>`);
             }
           }}
         />
       )}
 
-      {showTerminals && locations.map((loc, idx) => (
-        loc.lat && loc.lng && !isNaN(loc.lat) && !isNaN(loc.lng) ? (
-          <Marker 
-            key={idx} 
-            position={[loc.lat, loc.lng]} 
-            icon={(icons as any)[loc.type] || icons.terminal}
-          >
-            <Popup>
-              <div className="p-1">
-                <p className="font-bold text-sm">{loc.name}</p>
-                <p className="text-xs uppercase text-blue-600">{loc.type.replace('_', ' ')}</p>
-              </div>
-            </Popup>
-          </Marker>
-        ) : null
-      ))}
+      {showTerminals &&
+        locations.map((loc) =>
+          loc.lat && loc.lng ? (
+            <Marker
+              key={`${loc.name}-${loc.lat}-${loc.lng}`}
+              position={[loc.lat, loc.lng]}
+              icon={icons[loc.type as keyof typeof icons] || icons.terminal}
+            >
+              <Popup>
+                <div className="p-1">
+                  <p className="font-bold text-sm">{loc.name}</p>
+                  <p className="text-xs uppercase text-blue-600">{loc.type.replace('_', ' ')}</p>
+                </div>
+              </Popup>
+            </Marker>
+          ) : null
+        )}
 
-      {showHighways && (
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          opacity={0.5}
+      {selection?.userOrigin && (
+        <Marker position={[selection.userOrigin.lat, selection.userOrigin.lng]} icon={icons.user}>
+          <Popup>
+            <p className="text-sm font-bold">Your location</p>
+          </Popup>
+        </Marker>
+      )}
+
+      {selection?.trip.boardLat && selection.trip.boardLng && (
+        <Marker position={[selection.trip.boardLat, selection.trip.boardLng]} icon={icons.board}>
+          <Popup>
+            <p className="text-sm font-bold">Board here</p>
+            <p className="text-xs">{selection.trip.lineName}</p>
+          </Popup>
+        </Marker>
+      )}
+
+      {transitPositions.length >= 2 && (
+        <Polyline
+          positions={transitPositions}
+          pathOptions={{ color: '#1d4ed8', weight: 5, opacity: 0.9 }}
         />
       )}
-    </MapContainer>
+
+      {walkPositions.length === 2 && (
+        <Polyline
+          positions={walkPositions}
+          pathOptions={{
+            color: '#64748b',
+            weight: 4,
+            opacity: 0.85,
+            dashArray: '8, 12',
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+export default function Map(props: MapProps) {
+  const mapInstanceId = useId();
+  const [mapReady, setMapReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const frame = requestAnimationFrame(() => {
+      if (!cancelled) setMapReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+      setMapReady(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapReady) return;
+    const t = window.setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 100);
+    return () => window.clearTimeout(t);
+  }, [mapReady]);
+
+  if (!mapReady) {
+    return <MapPlaceholder />;
+  }
+
+  return (
+    <div className="h-full w-full min-h-[200px]">
+      <MapContainer
+        key={mapInstanceId}
+        center={ManilaCenter}
+        zoom={12}
+        scrollWheelZoom
+        className="h-full w-full"
+        style={{ height: '100%', width: '100%' }}
+      >
+        <CommuteMapLayers {...props} />
+      </MapContainer>
+    </div>
   );
 }
