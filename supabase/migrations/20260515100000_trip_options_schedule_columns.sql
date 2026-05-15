@@ -17,6 +17,5 @@ INSERT INTO transport_modes (slug, label, category) VALUES
   ('ferry_pasig', 'Pasig River Ferry', 'ferry')
 ON CONFLICT (slug) DO NOTHING;
 
--- Re-run CREATE OR REPLACE FUNCTION search_trip_options and
--- search_trip_options_by_text from 20260515000000_transit_trip_options.sql
--- (required so RPC return types include the new columns).
+-- If you already ran 20260515000000, you only need the schedule ALTERs above.
+-- For search RPC updates, run 20260515200000_improve_trip_search.sql instead.

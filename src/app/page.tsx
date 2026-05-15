@@ -22,6 +22,7 @@ export default function Home() {
   const [selectedTrip, setSelectedTrip] = useState<TripOption | null>(null);
   const [userOrigin, setUserOrigin] = useState<{ lat: number; lng: number } | null>(null);
   const [useDiscounted, setUseDiscounted] = useState(false);
+  const [searchMeta, setSearchMeta] = useState<{ hasExact?: boolean; hasPartial?: boolean } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [alerts, setAlerts] = useState<{ id: string; type: string; description: string; created_at: string }[]>([]);
   
@@ -55,6 +56,7 @@ export default function Home() {
       const data = await res.json();
       const results = (data.results || []) as TripOption[];
       setTrips(results);
+      setSearchMeta(data.meta || null);
       if (results.length > 0) {
         setSelectedTrip(results[0]);
       }
@@ -242,6 +244,11 @@ export default function Home() {
                 </div>
               ) : trips.length > 0 ? (
                 <div className="space-y-4">
+                  {searchMeta?.hasPartial && searchMeta?.hasExact === false && (
+                    <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                      No exact route for this pair in our database. Showing trips that start or end near your search.
+                    </p>
+                  )}
                   {trips.map((trip) => {
                     const fare = useDiscounted ? trip.fareDiscounted : trip.fareRegular;
                     const isSelected = selectedTrip?.id === trip.id;
@@ -259,6 +266,11 @@ export default function Home() {
                           <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-full uppercase tracking-tighter mb-2 inline-block">
                             {trip.modeLabel}
                           </span>
+                          {trip.matchType === 'partial' && (
+                            <span className="ml-2 text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-1 rounded-full">
+                              Nearby match
+                            </span>
+                          )}
                           <h4 className="font-space font-bold text-lg">{trip.originName} → {trip.destName}</h4>
                             <p className="text-sm text-on-surface-variant mt-1">{trip.lineName}</p>
                             {(trip.distanceKm != null || trip.frequency) && (
@@ -294,8 +306,10 @@ export default function Home() {
                 <div className="bg-white border border-outline-variant p-10 rounded-2xl text-center">
                   <NavIcon className="w-12 h-12 text-outline mx-auto mb-4" />
                   <h3 className="font-space font-bold text-lg mb-2">No routes found</h3>
-                  <p className="text-sm text-on-surface-variant max-w-xs mx-auto">
-                    We couldn't find a direct match for "{origin} {destination}". Try searching for major landmarks like "Cubao", "Makati", or "BGC".
+                  <p className="text-sm text-on-surface-variant max-w-sm mx-auto">
+                    This app only shows trips from our imported fare sheet (~76 routes). Use place names
+                    like <strong>Fairview</strong>, <strong>Cubao</strong>, <strong>PITX</strong>, or{' '}
+                    <strong>SM North EDSA</strong>. Short names work (e.g. &quot;Fairview&quot; → &quot;Cubao&quot;).
                   </p>
                 </div>
               ) : (

@@ -52,6 +52,7 @@ export interface TripOption {
   originDistanceM: number;
   destDistanceM: number;
   walkLeg?: WalkLeg;
+  matchType?: 'exact' | 'partial';
   kind: 'trip_option' | 'crowd_route';
 }
 
