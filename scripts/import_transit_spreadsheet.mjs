@@ -17,9 +17,15 @@ import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
 
 dotenv.config({ path: '.env.local' });
+dotenv.config({ path: '.env' });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_CSV = path.join(__dirname, '..', 'data', 'transit_sample.csv');
+const DEFAULT_DATA_FILE = path.join(
+  __dirname,
+  '..',
+  'commute-data',
+  'metro-manila-commuter-fares-routes.xlsx'
+);
 const QA_REPORT_PATH = path.join(__dirname, '..', 'data', 'import_qa_report.csv');
 
 const NOMINATIM_DELAY_MS = 1100;
@@ -71,8 +77,17 @@ function parseDistanceKm(val) {
   return isNaN(n) ? null : Math.round(n * 100) / 100;
 }
 
+/** Excel stores times as day fraction (e.g. 0.5 = noon). */
 function parseScheduleText(val) {
   if (val == null || val === '') return null;
+  if (typeof val === 'number' && val >= 0 && val < 1) {
+    const totalMinutes = Math.round(val * 24 * 60);
+    const hours24 = Math.floor(totalMinutes / 60) % 24;
+    const mins = totalMinutes % 60;
+    const ampm = hours24 >= 12 ? 'PM' : 'AM';
+    const h12 = hours24 % 12 || 12;
+    return `${h12}:${String(mins).padStart(2, '0')} ${ampm}`;
+  }
   return String(val).trim();
 }
 
@@ -106,6 +121,12 @@ function extractRoadTokens(routeName) {
   if (/edsa/i.test(n)) tokens.push('EDSA');
   if (/slex/i.test(n)) tokens.push('South Luzon Expressway');
   if (/ortigas/i.test(n)) tokens.push('Ortigas Avenue');
+  if (/\s+-\s+/.test(n)) {
+    n.split(/\s+-\s+/)
+      .map((p) => p.replace(/^via\s+/i, '').trim())
+      .filter((p) => p.length > 2)
+      .forEach((p) => tokens.push(p));
+  }
   if (tokens.length === 0 && n.length > 2) tokens.push(n.split(/[-–]/)[0].trim());
   return [...new Set(tokens)].filter(Boolean);
 }
@@ -299,7 +320,11 @@ function bboxFromPoints(lng1, lat1, lng2, lat2, bufferDeg = 0.03) {
   return [south, west, north, east];
 }
 
-async function buildPath(originGeo, destGeo, routeName) {
+async function buildPath(originGeo, destGeo, routeName, skipOverpass = false) {
+  if (skipOverpass) {
+    const wkt = `LINESTRING(${originGeo.lng} ${originGeo.lat}, ${destGeo.lng} ${destGeo.lat})`;
+    return { wkt, wayIds: [], pathSource: 'straight' };
+  }
   const tokens = extractRoadTokens(routeName);
   const bbox = bboxFromPoints(
     originGeo.lng,
@@ -340,7 +365,8 @@ function writeQaReport(rows) {
 async function main() {
   const args = process.argv.slice(2);
   const qaOnly = args.includes('--qa-only');
-  const filePath = args.find((a) => !a.startsWith('--')) || DEFAULT_CSV;
+  const skipOverpass = args.includes('--skip-overpass');
+  const filePath = args.find((a) => !a.startsWith('--')) || DEFAULT_DATA_FILE;
 
   if (!fs.existsSync(filePath)) {
     console.error(`File not found: ${filePath}`);
@@ -469,7 +495,7 @@ async function main() {
       return existing.id;
     }
 
-    const pathResult = await buildPath(originGeo, destGeo, routeName);
+    const pathResult = await buildPath(originGeo, destGeo, routeName, skipOverpass);
 
     if (pathResult.pathSource === 'straight') {
       qaIssues.push({
@@ -508,31 +534,38 @@ async function main() {
     return inserted.id;
   }
 
+  async function placeIdToGeo(placeId) {
+    const { data } = await supabase.from('places').select('geom').eq('id', placeId).single();
+    if (!data?.geom || typeof data.geom !== 'string') return null;
+    const match = data.geom.match(/POINT\(([-\d.]+) ([-\d.]+)\)/);
+    if (!match) return null;
+    return { lng: parseFloat(match[1]), lat: parseFloat(match[2]) };
+  }
+
   let imported = 0;
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     const modeSlug = mapMode(row.mode);
 
-    const originGeo = await geocodeNominatim(row.origin);
-    const destGeo = await geocodeNominatim(row.destination);
+    if (qaOnly) continue;
 
-    if (!originGeo || !destGeo) {
+    const originId = await getOrCreatePlace(row.origin);
+    const destId = await getOrCreatePlace(row.destination);
+    if (!originId || !destId) {
       qaIssues.push({
         row: i + 2,
         origin: row.origin,
         destination: row.destination,
         issue: 'geocode_failed',
-        detail: !originGeo ? 'origin' : 'destination',
+        detail: 'origin or destination place',
       });
       continue;
     }
 
-    if (qaOnly) continue;
-
-    const originId = await getOrCreatePlace(row.origin);
-    const destId = await getOrCreatePlace(row.destination);
-    if (!originId || !destId) continue;
+    const originGeo = await placeIdToGeo(originId);
+    const destGeo = await placeIdToGeo(destId);
+    if (!originGeo || !destGeo) continue;
 
     const lineId = await getOrCreateLine(
       modeSlug,

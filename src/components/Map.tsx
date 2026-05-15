@@ -7,6 +7,7 @@ import { useEffect, useState, useMemo, useId } from 'react';
 import { supabase } from '@/lib/supabase';
 import MapFitBounds from './MapFitBounds';
 import type { TripOption } from '@/lib/routing';
+import { pathLooksLikeStraightLine, pathToLatLngs } from '@/lib/routeGeometry';
 
 if (typeof window !== 'undefined') {
   delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
@@ -49,11 +50,6 @@ interface MapProps {
   selection?: MapSelection | null;
 }
 
-function pathToLatLngs(path: TripOption['pathGeojson']): [number, number][] {
-  if (!path?.coordinates?.length) return [];
-  return path.coordinates.map((c) => [c[1], c[0]] as [number, number]);
-}
-
 function MapPlaceholder() {
   return (
     <div className="h-full w-full min-h-[200px] bg-surface-container-low animate-pulse flex items-center justify-center text-outline font-space">
@@ -72,6 +68,7 @@ function CommuteMapLayers({
     { name: string; type: string; lat: number; lng: number }[]
   >([]);
   const [boundaries, setBoundaries] = useState<GeoJSON.FeatureCollection | null>(null);
+  const [roadPath, setRoadPath] = useState<[number, number][]>([]);
 
   useEffect(() => {
     if (showTerminals) {
@@ -123,19 +120,59 @@ function CommuteMapLayers({
     }
   };
 
-  const transitPositions = useMemo(() => {
-    if (!selection?.trip) return [];
-    const trip = selection.trip;
-    const fromPath = pathToLatLngs(trip.pathGeojson);
-    if (fromPath.length >= 2) return fromPath;
-    if (trip.originLat && trip.destLat) {
-      return [
-        [trip.originLat, trip.originLng] as [number, number],
-        [trip.destLat, trip.destLng] as [number, number],
-      ];
-    }
-    return [];
+  const storedPath = useMemo(() => {
+    if (!selection?.trip) return [] as [number, number][];
+    return pathToLatLngs(selection.trip.pathGeojson);
   }, [selection]);
+
+  useEffect(() => {
+    const trip = selection?.trip;
+    if (!trip?.originLat || !trip?.destLat) {
+      setRoadPath([]);
+      return;
+    }
+
+    const fallback: [number, number][] =
+      storedPath.length >= 2
+        ? storedPath
+        : [
+            [trip.originLat, trip.originLng],
+            [trip.destLat, trip.destLng],
+          ];
+
+    if (storedPath.length > 2 && !pathLooksLikeStraightLine(storedPath)) {
+      setRoadPath(storedPath);
+      return;
+    }
+
+    let cancelled = false;
+    const params = new URLSearchParams({
+      olat: String(trip.originLat),
+      olng: String(trip.originLng),
+      dlat: String(trip.destLat),
+      dlng: String(trip.destLng),
+    });
+
+    fetch(`/api/trips/geometry?${params}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.coordinates?.length >= 2) {
+          setRoadPath(data.coordinates);
+        } else {
+          setRoadPath(fallback);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setRoadPath(fallback);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selection, storedPath]);
+
+  const transitPositions = roadPath;
 
   const walkPositions = useMemo((): [number, number][] => {
     const walk = selection?.trip.walkLeg;
