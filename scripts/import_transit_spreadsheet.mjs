@@ -15,6 +15,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import XLSX from 'xlsx';
+import { resolvePlace, isInMetroManila } from './lib/placeGeocode.mjs';
 
 dotenv.config({ path: '.env.local' });
 dotenv.config({ path: '.env' });
@@ -28,7 +29,6 @@ const DEFAULT_DATA_FILE = path.join(
 );
 const QA_REPORT_PATH = path.join(__dirname, '..', 'data', 'import_qa_report.csv');
 
-const NOMINATIM_DELAY_MS = 1100;
 const OVERPASS_DELAY_MS = 1500;
 const USER_AGENT = 'CommuteManila/1.0 (import-script)';
 
@@ -220,26 +220,6 @@ function normalizeRow(raw) {
   };
 }
 
-async function geocodeNominatim(query) {
-  const q = `${query}, Metro Manila, Philippines`;
-  const params = new URLSearchParams({ q, format: 'json', limit: '1', countrycodes: 'ph' });
-  const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-    headers: { 'User-Agent': USER_AGENT },
-  });
-  await sleep(NOMINATIM_DELAY_MS);
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!data?.length) return null;
-  const hit = data[0];
-  return {
-    lat: parseFloat(hit.lat),
-    lng: parseFloat(hit.lon),
-    osmId: hit.osm_id,
-    importance: hit.importance,
-    displayName: hit.display_name,
-  };
-}
-
 async function fetchOverpassWays(bbox, roadTokens) {
   const [south, west, north, east] = bbox;
   const nameFilters = roadTokens
@@ -420,15 +400,30 @@ async function main() {
       : null;
 
     if (!geo) {
-      geo = await geocodeNominatim(name);
+      geo = await resolvePlace(name);
       if (geo && !qaOnly) {
         await supabase.from('geocode_cache').upsert({
           query_text: name,
           lat: geo.lat,
           lng: geo.lng,
-          raw_json: { displayName: geo.displayName, importance: geo.importance },
+          raw_json: {
+            displayName: geo.displayName,
+            importance: geo.importance,
+            source: geo.source,
+          },
         });
       }
+    }
+
+    if (geo && !isInMetroManila(geo.lat, geo.lng)) {
+      qaIssues.push({
+        row: name,
+        origin: name,
+        destination: '',
+        issue: 'outside_metro_manila',
+        detail: `${geo.lat},${geo.lng}`,
+      });
+      return null;
     }
 
     if (!geo) {

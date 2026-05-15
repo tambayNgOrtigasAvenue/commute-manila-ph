@@ -32,15 +32,37 @@ const icons = {
   terminal: createIcon('blue'),
   station: createIcon('blue'),
   jeepney_hub: createIcon('blue'),
-  user: createIcon('red'),
-  board: createIcon('green'),
+  origin: createIcon('green'),
+  destination: createIcon('red'),
+  user: createIcon('orange'),
+  board: createIcon('blue'),
 };
 
 const ManilaCenter: [number, number] = [14.5995, 120.9842];
 
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export interface MapPoint {
+  lat: number;
+  lng: number;
+  label?: string;
+}
+
 export interface MapSelection {
   trip: TripOption;
-  userOrigin?: { lat: number; lng: number };
+  /** GPS position only — not geocoded search text */
+  userGps?: MapPoint;
+  /** Where the user's search text resolved on the map */
+  searchOrigin?: MapPoint;
+  searchDestination?: MapPoint;
 }
 
 interface MapProps {
@@ -181,14 +203,24 @@ function CommuteMapLayers({
   }, [selection]);
 
   const fitPositions = useMemo((): [number, number][] => {
+    const trip = selection?.trip;
     const pts: [number, number][] = [];
-    if (selection?.userOrigin) {
-      pts.push([selection.userOrigin.lat, selection.userOrigin.lng]);
+    if (trip?.originLat && trip?.originLng) {
+      pts.push([trip.originLat, trip.originLng]);
+    }
+    if (trip?.destLat && trip?.destLng) {
+      pts.push([trip.destLat, trip.destLng]);
     }
     pts.push(...transitPositions);
     pts.push(...walkPositions);
-    if (selection?.trip.boardLat) {
-      pts.push([selection.trip.boardLat, selection.trip.boardLng]);
+    if (selection?.searchOrigin) {
+      pts.push([selection.searchOrigin.lat, selection.searchOrigin.lng]);
+    }
+    if (selection?.searchDestination) {
+      pts.push([selection.searchDestination.lat, selection.searchDestination.lng]);
+    }
+    if (selection?.userGps) {
+      pts.push([selection.userGps.lat, selection.userGps.lng]);
     }
     return pts;
   }, [selection, transitPositions, walkPositions]);
@@ -243,15 +275,77 @@ function CommuteMapLayers({
           ) : null
         )}
 
-      {selection?.userOrigin && (
-        <Marker position={[selection.userOrigin.lat, selection.userOrigin.lng]} icon={icons.user}>
+      {selection?.trip.originLat && selection?.trip.originLng && (
+        <Marker
+          position={[selection.trip.originLat, selection.trip.originLng]}
+          icon={icons.origin}
+        >
           <Popup>
-            <p className="text-sm font-bold">Your location</p>
+            <p className="text-sm font-bold">Route start</p>
+            <p className="text-xs">{selection.trip.originName}</p>
           </Popup>
         </Marker>
       )}
 
-      {selection?.trip.boardLat && selection.trip.boardLng && (
+      {selection?.trip.destLat && selection?.trip.destLng && (
+        <Marker
+          position={[selection.trip.destLat, selection.trip.destLng]}
+          icon={icons.destination}
+        >
+          <Popup>
+            <p className="text-sm font-bold">Route end</p>
+            <p className="text-xs">{selection.trip.destName}</p>
+          </Popup>
+        </Marker>
+      )}
+
+      {selection?.searchOrigin &&
+        selection.trip.originLat &&
+        haversineKm(
+          selection.searchOrigin.lat,
+          selection.searchOrigin.lng,
+          selection.trip.originLat,
+          selection.trip.originLng
+        ) > 0.5 && (
+          <Marker
+            position={[selection.searchOrigin.lat, selection.searchOrigin.lng]}
+            icon={icons.user}
+          >
+            <Popup>
+              <p className="text-sm font-bold">You searched for</p>
+              <p className="text-xs">{selection.searchOrigin.label || 'Origin'}</p>
+            </Popup>
+          </Marker>
+        )}
+
+      {selection?.searchDestination &&
+        selection.trip.destLat &&
+        haversineKm(
+          selection.searchDestination.lat,
+          selection.searchDestination.lng,
+          selection.trip.destLat,
+          selection.trip.destLng
+        ) > 0.5 && (
+          <Marker
+            position={[selection.searchDestination.lat, selection.searchDestination.lng]}
+            icon={icons.user}
+          >
+            <Popup>
+              <p className="text-sm font-bold">You searched for</p>
+              <p className="text-xs">{selection.searchDestination.label || 'Destination'}</p>
+            </Popup>
+          </Marker>
+        )}
+
+      {selection?.userGps && (
+        <Marker position={[selection.userGps.lat, selection.userGps.lng]} icon={icons.user}>
+          <Popup>
+            <p className="text-sm font-bold">Your GPS location</p>
+          </Popup>
+        </Marker>
+      )}
+
+      {selection?.trip.walkLeg && selection.trip.boardLat && selection.trip.boardLng && (
         <Marker position={[selection.trip.boardLat, selection.trip.boardLng]} icon={icons.board}>
           <Popup>
             <p className="text-sm font-bold">Board here</p>

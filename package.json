@@ -10,7 +10,10 @@
     "import:transit": "node scripts/import_transit_spreadsheet.mjs",
     "import:transit:qa": "node scripts/import_transit_spreadsheet.mjs --qa-only",
     "import:commute": "node scripts/import_transit_spreadsheet.mjs commute-data/metro-manila-commuter-fares-routes.xlsx",
-    "import:commute:fast": "node scripts/import_transit_spreadsheet.mjs commute-data/metro-manila-commuter-fares-routes.xlsx --skip-overpass"
+    "import:commute:fast": "node scripts/import_transit_spreadsheet.mjs commute-data/metro-manila-commuter-fares-routes.xlsx --skip-overpass",
+    "build:places": "node scripts/build_place_aliases.mjs",
+    "fetch:reddit": "node scripts/fetch_reddit_htgtph.mjs",
+    "import:community": "node scripts/import_community_routes.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.104.1",

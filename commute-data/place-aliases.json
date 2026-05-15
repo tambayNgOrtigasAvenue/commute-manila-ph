@@ -1,0 +1,858 @@
+{
+  "version": 1,
+  "bbox": {
+    "minLat": 14.35,
+    "maxLat": 14.78,
+    "minLng": 120.88,
+    "maxLng": 121.15
+  },
+  "updatedAt": "2026-05-15T13:08:45.973Z",
+  "places": [
+    {
+      "name": "Aguirre Avenue (BF Homes), Parañaque City",
+      "city": "Parañaque City",
+      "lat": 14.453843,
+      "lng": 121.016953,
+      "aliases": [
+        "aguirre avenue (bf homes)",
+        "bf homes"
+      ],
+      "confidence": 0.000058607614251880943,
+      "source": "nominatim",
+      "osmId": 6000720495
+    },
+    {
+      "name": "Alabang (Festival Mall), Muntinlupa City",
+      "city": "Muntinlupa City",
+      "lat": 14.417845,
+      "lng": 121.04222,
+      "aliases": [
+        "alabang (festival mall)",
+        "festival mall"
+      ],
+      "confidence": 0.000058607614251880943,
+      "source": "nominatim",
+      "osmId": 13226908313
+    },
+    {
+      "name": "Alabang (Starmall), Muntinlupa City",
+      "city": "Muntinlupa City",
+      "lat": 14.416909,
+      "lng": 121.046399,
+      "aliases": [
+        "alabang (starmall)",
+        "starmall"
+      ],
+      "confidence": 0.0800586076142519,
+      "source": "nominatim",
+      "osmId": 10768878
+    },
+    {
+      "name": "Alabang Town Center, Muntinlupa City",
+      "city": "Muntinlupa City",
+      "lat": 14.4234,
+      "lng": 121.0275,
+      "aliases": [
+        "atc alabang"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Antipolo, Rizal",
+      "city": "Rizal",
+      "lat": 14.550983,
+      "lng": 121.104747,
+      "aliases": [
+        "antipolo"
+      ],
+      "confidence": 0.14672527428091856,
+      "source": "nominatim",
+      "osmId": 107941548
+    },
+    {
+      "name": "Araneta Center-Cubao, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6198,
+      "lng": 121.0565,
+      "aliases": [
+        "araneta-cubao"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Araneta-Cubao MRT-3 Station, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6192,
+      "lng": 121.0511,
+      "aliases": [
+        "cubao mrt",
+        "araneta cubao mrt"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Ayala Avenue, Makati City",
+      "city": "Makati City",
+      "lat": 14.552947,
+      "lng": 121.026617,
+      "aliases": [
+        "ayala avenue"
+      ],
+      "confidence": 0.053391940947585224,
+      "source": "nominatim",
+      "osmId": 374114343
+    },
+    {
+      "name": "Ayala Center, Makati City",
+      "city": "Makati City",
+      "lat": 14.5547,
+      "lng": 121.0244,
+      "aliases": [
+        "ayala center makati",
+        "glorietta ayala"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Ayala MRT-3 Station, Makati City",
+      "city": "Makati City",
+      "lat": 14.549,
+      "lng": 121.0276,
+      "aliases": [
+        "ayala mrt"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Ayala, Makati City",
+      "city": "Makati City",
+      "lat": 14.549198,
+      "lng": 121.027902,
+      "aliases": [
+        "ayala"
+      ],
+      "confidence": 0.35782926338984733,
+      "source": "nominatim",
+      "osmId": 27663063
+    },
+    {
+      "name": "Baclaran (Redemptorist Church), Parañaque City",
+      "city": "Parañaque City",
+      "lat": 14.531414,
+      "lng": 120.995244,
+      "aliases": [
+        "baclaran (redemptorist church)",
+        "redemptorist church"
+      ],
+      "confidence": 0.3054111172263137,
+      "source": "nominatim",
+      "osmId": 24058935
+    },
+    {
+      "name": "Baclaran, Parañaque City",
+      "city": "Parañaque City",
+      "lat": 14.5342,
+      "lng": 120.9985,
+      "aliases": [
+        "baclaran church"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "BGC (Bonifacio High Street), Taguig City",
+      "city": "Taguig City",
+      "lat": 14.5516,
+      "lng": 121.047,
+      "aliases": [
+        "bonifacio high street",
+        "bhs bgc"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "BGC (Market! Market!), Taguig City",
+      "city": "Taguig City",
+      "lat": 14.5492,
+      "lng": 121.0549,
+      "aliases": [
+        "market market bgc",
+        "market market",
+        "bgc market market"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Buendia / Gil Puyat Avenue, Makati City",
+      "city": "Makati City",
+      "lat": 14.560693,
+      "lng": 121.028208,
+      "aliases": [
+        "buendia / gil puyat avenue"
+      ],
+      "confidence": 0.000058607614251880943,
+      "source": "nominatim",
+      "osmId": 22788785
+    },
+    {
+      "name": "C5 Staffhouse / Market! Market! Area, Taguig City",
+      "city": "Taguig City",
+      "lat": 14.5492,
+      "lng": 121.0549,
+      "aliases": [
+        "c5 staffhouse / market! market! area"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Congressional Avenue / Mindanao Avenue, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.668774,
+      "lng": 121.034994,
+      "aliases": [
+        "congressional avenue / mindanao avenue"
+      ],
+      "confidence": 0.00006437705043102186,
+      "source": "nominatim",
+      "osmId": 453007803
+    },
+    {
+      "name": "Cubao (Araneta Center), Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6198,
+      "lng": 121.0565,
+      "aliases": [
+        "araneta center cubao",
+        "araneta center-cubao"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Cubao (Farmers Plaza), Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6189,
+      "lng": 121.0548,
+      "aliases": [
+        "farmers plaza cubao"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Cubao, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6195,
+      "lng": 121.0563,
+      "aliases": [
+        "cubao",
+        "araneta cubao",
+        "cubao quezon city"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Divisoria / Tutuban Area, Manila City",
+      "city": "Manila",
+      "lat": 14.6065,
+      "lng": 120.9728,
+      "aliases": [
+        "tutuban",
+        "divisoria tutuban"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Divisoria, Manila",
+      "city": "Manila",
+      "lat": 14.6047,
+      "lng": 120.974,
+      "aliases": [
+        "divisoria manila",
+        "168 mall divisoria"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Doroteo Jose, Manila",
+      "city": "Manila",
+      "lat": 14.605296,
+      "lng": 120.982134,
+      "aliases": [
+        "doroteo jose"
+      ],
+      "confidence": 0.3508056963223209,
+      "source": "nominatim",
+      "osmId": 112644274
+    },
+    {
+      "name": "EDSA-Taft, Pasay City",
+      "city": "Pasay City",
+      "lat": 14.537581,
+      "lng": 120.999544,
+      "aliases": [
+        "edsa-taft"
+      ],
+      "confidence": 0.000058607614251880943,
+      "source": "nominatim",
+      "osmId": 3611904130
+    },
+    {
+      "name": "Escolta (Lawton), Manila",
+      "city": "Manila",
+      "lat": 14.5978,
+      "lng": 120.9795,
+      "aliases": [
+        "escolta manila"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Fairview (Robinsons Novaliches), Quezon City",
+      "city": "Quezon City",
+      "lat": 14.7345,
+      "lng": 121.0575,
+      "aliases": [
+        "robinsons novaliches fairview"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Fairview, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.7342,
+      "lng": 121.0581,
+      "aliases": [
+        "fairview quezon city"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Gateway Mall (Cubao), Quezon City",
+      "city": "Quezon City",
+      "lat": 14.621,
+      "lng": 121.0535,
+      "aliases": [
+        "gateway mall cubao"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Guadalupe MRT-3 Station, Makati City",
+      "city": "Makati City",
+      "lat": 14.5668,
+      "lng": 121.0458,
+      "aliases": [
+        "guadalupe mrt"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Guadalupe, Makati City",
+      "city": "Makati City",
+      "lat": 14.5665,
+      "lng": 121.0455,
+      "aliases": [
+        "guadalupe makati"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Katipunan, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6395,
+      "lng": 121.0741,
+      "aliases": [
+        "katipunan ave",
+        "katipunan quezon city"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Lawton (Liwasang Bonifacio), Manila",
+      "city": "Manila",
+      "lat": 14.593,
+      "lng": 120.9786,
+      "aliases": [],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Lawton, Manila",
+      "city": "Manila",
+      "lat": 14.593,
+      "lng": 120.9786,
+      "aliases": [
+        "lawton manila",
+        "liwasang bonifacio"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "LRT Buendia, Pasay City",
+      "city": "Pasay City",
+      "lat": 14.554128,
+      "lng": 120.997176,
+      "aliases": [
+        "lrt buendia"
+      ],
+      "confidence": 0.000058607614251880943,
+      "source": "nominatim",
+      "osmId": 11245069538
+    },
+    {
+      "name": "Main Avenue / Cubao EDSA Carousel Station, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6195,
+      "lng": 121.0563,
+      "aliases": [
+        "main avenue / cubao edsa carousel station",
+        "cubao"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Market! Market!, Bonifacio Global City, Taguig City",
+      "city": "Taguig City",
+      "lat": 14.5492,
+      "lng": 121.0549,
+      "aliases": [],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Monumento, Caloocan City",
+      "city": "Caloocan City",
+      "lat": 14.6572,
+      "lng": 120.9831,
+      "aliases": [
+        "monumento caloocan"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "NAIA Terminal 3, Pasay City",
+      "city": "Pasay City",
+      "lat": 14.5086,
+      "lng": 121.0194,
+      "aliases": [
+        "naia t3",
+        "naia terminal 3"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Newport World Resorts / Newport City, Pasay City",
+      "city": "Pasay City",
+      "lat": 14.518662,
+      "lng": 121.019007,
+      "aliases": [
+        "newport world resorts / newport city"
+      ],
+      "confidence": 0.000058607614251880943,
+      "source": "nominatim",
+      "osmId": 1004528749
+    },
+    {
+      "name": "North Avenue (Trinoma), Quezon City",
+      "city": "Quezon City",
+      "lat": 14.652164,
+      "lng": 121.032241,
+      "aliases": [
+        "north avenue (trinoma)",
+        "trinoma",
+        "trinoma north avenue"
+      ],
+      "confidence": 0.00006437705043102186,
+      "source": "nominatim",
+      "osmId": 222628892
+    },
+    {
+      "name": "North Avenue / SM City North EDSA, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6567,
+      "lng": 121.0297,
+      "aliases": [
+        "north avenue / sm city north edsa"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "North Avenue MRT-3 Station, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6537,
+      "lng": 121.0312,
+      "aliases": [
+        "north avenue mrt"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Ortigas (Robinsons Galleria), Quezon City",
+      "city": "Quezon City",
+      "lat": 14.591186,
+      "lng": 121.05935,
+      "aliases": [
+        "ortigas (robinsons galleria)",
+        "robinsons galleria"
+      ],
+      "confidence": 0.000058607614251880943,
+      "source": "nominatim",
+      "osmId": 1437367255
+    },
+    {
+      "name": "Ortigas MRT-3 Station, Mandaluyong City",
+      "city": "Mandaluyong City",
+      "lat": 14.587,
+      "lng": 121.0562,
+      "aliases": [
+        "ortigas mrt"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Philcoa, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.654089,
+      "lng": 121.052901,
+      "aliases": [
+        "philcoa"
+      ],
+      "confidence": 0.00006437705043102186,
+      "source": "nominatim",
+      "osmId": 7836404784
+    },
+    {
+      "name": "PITX, Parañaque City",
+      "city": "Parañaque City",
+      "lat": 14.5088,
+      "lng": 120.9912,
+      "aliases": [
+        "paris integrated terminal",
+        "pitx terminal"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "President's Avenue, BF Homes Parañaque",
+      "city": "BF Homes Parañaque",
+      "lat": 14.442429,
+      "lng": 121.030044,
+      "aliases": [
+        "president's avenue"
+      ],
+      "confidence": 0.053391940947585224,
+      "source": "nominatim",
+      "osmId": 1264890452
+    },
+    {
+      "name": "Quezon Avenue / EDSA Area, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.642296,
+      "lng": 121.038766,
+      "aliases": [
+        "quezon avenue / edsa area"
+      ],
+      "confidence": 0.34431618017923493,
+      "source": "nominatim",
+      "osmId": 128196488
+    },
+    {
+      "name": "Quezon Avenue MRT-3 Station, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6356,
+      "lng": 121.0385,
+      "aliases": [
+        "quezon ave mrt"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Quezon Memorial Circle, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.651447,
+      "lng": 121.049288,
+      "aliases": [
+        "quezon memorial circle"
+      ],
+      "confidence": 0.36902538090653614,
+      "source": "nominatim",
+      "osmId": 12322420
+    },
+    {
+      "name": "Quiapo Church / Plaza Miranda, Manila City",
+      "city": "Manila City",
+      "lat": 14.5987,
+      "lng": 120.984,
+      "aliases": [
+        "quiapo church / plaza miranda"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Quiapo Church, Manila",
+      "city": "Manila",
+      "lat": 14.5987,
+      "lng": 120.984,
+      "aliases": [
+        "quiapo",
+        "quiapo church manila"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Recto, Manila",
+      "city": "Manila",
+      "lat": 14.6041,
+      "lng": 120.9832,
+      "aliases": [
+        "recto manila",
+        "recto avenue"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Robinsons Novaliches / Quirino Highway, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.723302,
+      "lng": 121.041869,
+      "aliases": [
+        "robinsons novaliches / quirino highway"
+      ],
+      "confidence": 0.00006437705043102186,
+      "source": "nominatim",
+      "osmId": 8720440622
+    },
+    {
+      "name": "Roosevelt, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.65756,
+      "lng": 121.02114,
+      "aliases": [
+        "roosevelt"
+      ],
+      "confidence": 0.35499373245428756,
+      "source": "nominatim",
+      "osmId": 402882918
+    },
+    {
+      "name": "Rosario, Pasig City",
+      "city": "Pasig City",
+      "lat": 14.59049,
+      "lng": 121.088272,
+      "aliases": [
+        "rosario"
+      ],
+      "confidence": 0.13339771038376438,
+      "source": "nominatim",
+      "osmId": 6314587
+    },
+    {
+      "name": "Shaw Boulevard, Mandaluyong City",
+      "city": "Mandaluyong City",
+      "lat": 14.587843,
+      "lng": 121.04531,
+      "aliases": [
+        "shaw boulevard"
+      ],
+      "confidence": 0.36664364446418835,
+      "source": "nominatim",
+      "osmId": 266119606
+    },
+    {
+      "name": "SM City North EDSA / North Avenue, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.656531,
+      "lng": 121.029787,
+      "aliases": [
+        "sm city north edsa / north avenue"
+      ],
+      "confidence": 0.00006437705043102186,
+      "source": "nominatim",
+      "osmId": 5078037724
+    },
+    {
+      "name": "SM City North Edsa, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6567,
+      "lng": 121.0297,
+      "aliases": [
+        "sm city north edsa"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "SM City North EDSA, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6567,
+      "lng": 121.0297,
+      "aliases": [
+        "sm north edsa",
+        "sm north"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "SM Fairview / Regalado Highway, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.734727,
+      "lng": 121.060894,
+      "aliases": [
+        "sm fairview / regalado highway",
+        "fairview quezon city"
+      ],
+      "confidence": 0.00006437705043102186,
+      "source": "nominatim",
+      "osmId": 794273528
+    },
+    {
+      "name": "SM Mall of Asia, Pasay City",
+      "city": "Pasay City",
+      "lat": 14.5352,
+      "lng": 120.9817,
+      "aliases": [
+        "moa pasay",
+        "mall of asia"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "SM Megamall (Ortigas), Mandaluyong City",
+      "city": "Mandaluyong City",
+      "lat": 14.5853,
+      "lng": 121.0567,
+      "aliases": [
+        "sm megamall",
+        "megamall ortigas",
+        "megamall"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "SM Megamall, Mandaluyong City",
+      "city": "Mandaluyong City",
+      "lat": 14.5853,
+      "lng": 121.0567,
+      "aliases": [],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "SM North EDSA Transport Terminal, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6567,
+      "lng": 121.0297,
+      "aliases": [
+        "sm north edsa transport terminal"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "SM Southmall, Las Piñas City",
+      "city": "Las Piñas City",
+      "lat": 14.432499,
+      "lng": 121.010075,
+      "aliases": [
+        "sm southmall"
+      ],
+      "confidence": 0.3298727163953751,
+      "source": "nominatim",
+      "osmId": 14061902
+    },
+    {
+      "name": "Taft Avenue MRT-3 Station, Pasay City",
+      "city": "Pasay City",
+      "lat": 14.5378,
+      "lng": 121.001,
+      "aliases": [
+        "taft mrt",
+        "edsa taft mrt"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "Taft Avenue, Pasay City",
+      "city": "Pasay City",
+      "lat": 14.537557,
+      "lng": 121.001307,
+      "aliases": [
+        "taft avenue"
+      ],
+      "confidence": 0.3436304091577327,
+      "source": "nominatim",
+      "osmId": 222628889
+    },
+    {
+      "name": "Trinoma, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6536,
+      "lng": 121.0344,
+      "aliases": [
+        "trinoma mall",
+        "trinoma north avenue"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "UP Diliman, Quezon City",
+      "city": "Quezon City",
+      "lat": 14.6538,
+      "lng": 121.0685,
+      "aliases": [
+        "up diliman quezon city"
+      ],
+      "confidence": 0.95,
+      "source": "curated"
+    },
+    {
+      "name": "UST (España), Manila",
+      "city": "Manila",
+      "lat": 14.609621,
+      "lng": 120.988383,
+      "aliases": [
+        "ust (españa)",
+        "españa"
+      ],
+      "confidence": 0.00007501869230177795,
+      "source": "nominatim",
+      "osmId": 7785583329
+    }
+  ]
+}

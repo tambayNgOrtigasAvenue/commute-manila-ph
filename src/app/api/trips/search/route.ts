@@ -180,14 +180,26 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const results = Array.from(byId.values()).sort((a, b) => {
-    if (a.matchType !== b.matchType) {
-      return a.matchType === 'exact' ? -1 : 1;
-    }
-    const distA = Number(a.originDistanceM || 0) + Number(a.destDistanceM || 0);
-    const distB = Number(b.originDistanceM || 0) + Number(b.destDistanceM || 0);
-    return distA - distB;
-  });
+  const placeNameMatches = (placeName: string, query: string): boolean => {
+    if (!query.trim()) return true;
+    const name = placeName.toLowerCase();
+    const q = query.trim().toLowerCase();
+    if (name.includes(q) || q.includes(name)) return true;
+    return q
+      .split(/[,;\s]+/)
+      .filter((t) => t.length >= 3)
+      .some((tok) => name.includes(tok));
+  };
+
+  const tripScore = (trip: ReturnType<typeof mapRow>): number => {
+    let score = trip.matchType === 'exact' ? 1000 : 0;
+    if (placeNameMatches(String(trip.originName), origin)) score += 500;
+    if (placeNameMatches(String(trip.destName), destination)) score += 500;
+    const distM = Number(trip.originDistanceM || 0) + Number(trip.destDistanceM || 0);
+    return score - distM / 100;
+  };
+
+  const results = Array.from(byId.values()).sort((a, b) => tripScore(b) - tripScore(a));
 
   return NextResponse.json({
     results,

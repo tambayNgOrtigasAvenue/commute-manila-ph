@@ -20,7 +20,11 @@ export default function Home() {
   const [destination, setDestination] = useState('');
   const [trips, setTrips] = useState<TripOption[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<TripOption | null>(null);
-  const [userOrigin, setUserOrigin] = useState<{ lat: number; lng: number } | null>(null);
+  const [userGps, setUserGps] = useState<{ lat: number; lng: number } | null>(null);
+  const [searchGeocoded, setSearchGeocoded] = useState<{
+    origin: { lat: number; lng: number } | null;
+    destination: { lat: number; lng: number } | null;
+  } | null>(null);
   const [useDiscounted, setUseDiscounted] = useState(false);
   const [searchMeta, setSearchMeta] = useState<{ hasExact?: boolean; hasPartial?: boolean } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,9 +52,9 @@ export default function Home() {
     setSelectedTrip(null);
     try {
       const params = new URLSearchParams({ origin, destination });
-      if (userOrigin) {
-        params.set('olat', String(userOrigin.lat));
-        params.set('olng', String(userOrigin.lng));
+      if (userGps) {
+        params.set('olat', String(userGps.lat));
+        params.set('olng', String(userGps.lng));
       }
       const res = await fetch(`/api/trips/search?${params}`);
       const data = await res.json();
@@ -60,9 +64,7 @@ export default function Home() {
       if (results.length > 0) {
         setSelectedTrip(results[0]);
       }
-      if (data.geocoded?.origin && !userOrigin) {
-        setUserOrigin(data.geocoded.origin);
-      }
+      setSearchGeocoded(data.geocoded || null);
     } catch (err) {
       console.error('Search failed:', err);
       setTrips([]);
@@ -71,10 +73,18 @@ export default function Home() {
     }
   };
 
-  const mapSelection: MapSelection | null =
-    selectedTrip
-      ? { trip: selectedTrip, userOrigin: userOrigin ?? undefined }
-      : null;
+  const mapSelection: MapSelection | null = selectedTrip
+    ? {
+        trip: selectedTrip,
+        userGps: userGps ? { ...userGps, label: 'GPS' } : undefined,
+        searchOrigin: searchGeocoded?.origin
+          ? { ...searchGeocoded.origin, label: origin }
+          : undefined,
+        searchDestination: searchGeocoded?.destination
+          ? { ...searchGeocoded.destination, label: destination }
+          : undefined,
+      }
+    : null;
 
   return (
     <div className="font-inter antialiased bg-background text-on-surface">
@@ -103,7 +113,7 @@ export default function Home() {
                   navigator.geolocation.getCurrentPosition((position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
-                    setUserOrigin({ lat, lng });
+                    setUserGps({ lat, lng });
                     setOrigin(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
                   });
                 }
@@ -160,7 +170,7 @@ export default function Home() {
                         navigator.geolocation.getCurrentPosition((position) => {
                           const lat = position.coords.latitude;
                           const lng = position.coords.longitude;
-                          setUserOrigin({ lat, lng });
+                          setUserGps({ lat, lng });
                           setOrigin(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
                         });
                       }
@@ -297,7 +307,14 @@ export default function Home() {
                           Walk ~{Math.round(trip.walkLeg.distanceM)} m to board
                         </p>
                       )}
-                      <p className="text-[10px] text-outline font-bold italic mt-2">Source: {trip.source}</p>
+                      <p className="text-[10px] text-outline font-bold italic mt-2">
+                        Source:{' '}
+                        {trip.source.startsWith('reddit_htgtph')
+                          ? 'r/HowToGetTherePH'
+                          : trip.source === 'spreadsheet_v1'
+                            ? 'Fare sheet'
+                            : trip.source}
+                      </p>
                       </button>
                     );
                   })}
