@@ -1,13 +1,21 @@
 'use client';
 
-import { MapContainer, TileLayer, Marker, Popup, GeoJSON, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect, useState, useMemo, useId } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import MapFitBounds from './MapFitBounds';
+import MapWhenReady from './MapWhenReady';
 import type { TripOption } from '@/lib/routing';
 import { pathLooksLikeStraightLine, pathToLatLngs } from '@/lib/routeGeometry';
+import { parsePointCoordinates } from '@/lib/parseCoordinates';
+import {
+  DEFAULT_TERMINAL_FILTERS,
+  TERMINAL_TYPE_META,
+  normalizeTerminalType,
+  type TerminalType,
+} from '@/lib/terminalTypes';
 
 if (typeof window !== 'undefined') {
   delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
@@ -28,15 +36,27 @@ const createIcon = (color: string) =>
     shadowSize: [41, 41],
   });
 
+const terminalIcons: Record<TerminalType, L.Icon> = {
+  bus: createIcon(TERMINAL_TYPE_META.bus.markerColor),
+  jeepney: createIcon(TERMINAL_TYPE_META.jeepney.markerColor),
+  e_jeepney: createIcon(TERMINAL_TYPE_META.e_jeepney.markerColor),
+  tricycle: createIcon(TERMINAL_TYPE_META.tricycle.markerColor),
+  train: createIcon(TERMINAL_TYPE_META.train.markerColor),
+};
+
 const icons = {
-  terminal: createIcon('blue'),
-  station: createIcon('blue'),
-  jeepney_hub: createIcon('blue'),
+  ...terminalIcons,
   origin: createIcon('green'),
   destination: createIcon('red'),
-  user: createIcon('orange'),
+  user: createIcon('gold'),
   board: createIcon('blue'),
 };
+
+function terminalIcon(type: string): L.Icon {
+  const normalized = normalizeTerminalType(type);
+  if (normalized) return terminalIcons[normalized];
+  return terminalIcons.bus;
+}
 
 const ManilaCenter: [number, number] = [14.5995, 120.9842];
 
@@ -65,8 +85,11 @@ export interface MapSelection {
   searchDestination?: MapPoint;
 }
 
+export type TerminalTypeFilters = Record<TerminalType, boolean>;
+
 interface MapProps {
   showTerminals: boolean;
+  terminalTypeFilters?: TerminalTypeFilters;
   showBoundaries: boolean;
   showHighways: boolean;
   selection?: MapSelection | null;
@@ -82,12 +105,13 @@ function MapPlaceholder() {
 
 function CommuteMapLayers({
   showTerminals,
+  terminalTypeFilters = DEFAULT_TERMINAL_FILTERS,
   showBoundaries,
   showHighways,
   selection,
 }: MapProps) {
   const [locations, setLocations] = useState<
-    { name: string; type: string; lat: number; lng: number }[]
+    { name: string; type: string; terminalType: TerminalType; lat: number; lng: number }[]
   >([]);
   const [boundaries, setBoundaries] = useState<GeoJSON.FeatureCollection | null>(null);
   const [roadPath, setRoadPath] = useState<[number, number][]>([]);
@@ -109,26 +133,36 @@ function CommuteMapLayers({
   }, [showBoundaries]);
 
   const fetchTerminals = async () => {
-    const { data } = await supabase.from('locations').select('name, type, coordinates');
+    const { data, error } = await supabase.from('locations').select('name, type, coordinates');
 
-    if (data) {
-      const parsed = data
-        .map((loc) => {
-          try {
-            if (!loc.coordinates || typeof loc.coordinates !== 'string') return null;
-            const match = loc.coordinates.match(/POINT\(([-\d.]+) ([\d.]+)\)/);
-            if (!match) return null;
-            const lng = parseFloat(match[1]);
-            const lat = parseFloat(match[2]);
-            if (isNaN(lat) || isNaN(lng)) return null;
-            return { ...loc, lat, lng };
-          } catch {
-            return null;
-          }
-        })
-        .filter((loc) => loc !== null) as { name: string; type: string; lat: number; lng: number }[];
-      setLocations(parsed);
+    if (error) {
+      console.error('Failed to load terminals:', error.message);
+      setLocations([]);
+      return;
     }
+
+    if (!data) {
+      setLocations([]);
+      return;
+    }
+
+    const parsed = data
+      .map((loc) => {
+        const point = parsePointCoordinates(loc.coordinates);
+        if (!point) return null;
+        const terminalType = normalizeTerminalType(loc.type);
+        if (!terminalType) return null;
+        return {
+          name: loc.name,
+          type: loc.type,
+          lat: point.lat,
+          lng: point.lng,
+          terminalType,
+        };
+      })
+      .filter((loc): loc is NonNullable<typeof loc> => loc !== null);
+
+    setLocations(parsed);
   };
 
   const fetchBoundaries = async () => {
@@ -227,12 +261,6 @@ function CommuteMapLayers({
 
   return (
     <>
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        opacity={showHighways ? 0.55 : 1}
-      />
-
       {fitPositions.length > 0 && <MapFitBounds positions={fitPositions} />}
 
       {showBoundaries && boundaries && (
@@ -258,22 +286,30 @@ function CommuteMapLayers({
       )}
 
       {showTerminals &&
-        locations.map((loc) =>
-          loc.lat && loc.lng ? (
+        locations
+          .filter((loc) => terminalTypeFilters[loc.terminalType])
+          .map((loc) => {
+            const meta = TERMINAL_TYPE_META[loc.terminalType];
+            return loc.lat && loc.lng ? (
             <Marker
               key={`${loc.name}-${loc.lat}-${loc.lng}`}
               position={[loc.lat, loc.lng]}
-              icon={icons[loc.type as keyof typeof icons] || icons.terminal}
+              icon={terminalIcon(loc.terminalType)}
             >
               <Popup>
                 <div className="p-1">
                   <p className="font-bold text-sm">{loc.name}</p>
-                  <p className="text-xs uppercase text-blue-600">{loc.type.replace('_', ' ')}</p>
+                  <p
+                    className="text-xs font-semibold uppercase mt-1"
+                    style={{ color: meta.color }}
+                  >
+                    {meta.label}
+                  </p>
                 </div>
               </Popup>
             </Marker>
-          ) : null
-        )}
+          ) : null;
+          })}
 
       {selection?.trip.originLat && selection?.trip.originLng && (
         <Marker
@@ -376,46 +412,56 @@ function CommuteMapLayers({
   );
 }
 
-export default function Map(props: MapProps) {
-  const mapInstanceId = useId();
-  const [mapReady, setMapReady] = useState(false);
+let mapMountCounter = 0;
+
+function MapResizeNotifier() {
+  const map = useMap();
 
   useEffect(() => {
-    let cancelled = false;
+    const t = window.setTimeout(() => {
+      try {
+        map.invalidateSize();
+      } catch {
+        /* map torn down */
+      }
+    }, 150);
+    return () => window.clearTimeout(t);
+  }, [map]);
 
-    const frame = requestAnimationFrame(() => {
-      if (!cancelled) setMapReady(true);
-    });
+  return null;
+}
 
-    return () => {
-      cancelled = true;
-      setMapReady(false);
-    };
+export default function Map(props: MapProps) {
+  const [mountId] = useState(() => `commute-map-${++mapMountCounter}`);
+  const [client, setClient] = useState(false);
+
+  useEffect(() => {
+    setClient(true);
   }, []);
 
-  useEffect(() => {
-    if (!mapReady) return;
-    const t = window.setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
-    }, 100);
-    return () => window.clearTimeout(t);
-  }, [mapReady]);
-
-  if (!mapReady) {
+  if (!client) {
     return <MapPlaceholder />;
   }
 
   return (
     <div className="h-full w-full min-h-[200px]">
       <MapContainer
-        key={mapInstanceId}
+        key={mountId}
         center={ManilaCenter}
         zoom={12}
         scrollWheelZoom
-        className="h-full w-full"
+        className="h-full w-full z-0"
         style={{ height: '100%', width: '100%' }}
       >
-        <CommuteMapLayers {...props} />
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          opacity={props.showHighways ? 0.55 : 1}
+        />
+        <MapResizeNotifier />
+        <MapWhenReady>
+          <CommuteMapLayers {...props} />
+        </MapWhenReady>
       </MapContainer>
     </div>
   );

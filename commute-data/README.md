@@ -5,6 +5,7 @@
 | File | Purpose |
 |------|---------|
 | `metro-manila-commuter-fares-routes.xlsx` | Primary fare sheet (~76 routes) |
+| `metro-manila-transport-terminals.xlsx` | Terminal locations (lat/lng) for map layer |
 | `place-aliases.json` | Curated coordinates + aliases for accurate geocoding |
 | `reddit-htgtph-routes.json` | Parsed routes from [r/HowToGetTherePH](https://www.reddit.com/r/HowToGetTherePH/) |
 | `reddit-htgtph-raw.json` | Raw Reddit posts (reference) |
@@ -17,6 +18,9 @@ npm run build:places
 
 # Re-import spreadsheet into Supabase (accurate geocoding via place-aliases)
 npm run import:commute
+
+# Seed map terminals from metro-manila-transport-terminals.xlsx
+npm run seed:terminals:fresh
 
 # Fetch community routes from Reddit
 npm run fetch:reddit

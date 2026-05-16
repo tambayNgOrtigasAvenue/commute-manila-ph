@@ -6,7 +6,13 @@ import { useState, useEffect } from 'react';
 import { TripOption } from '@/lib/routing';
 import { supabase } from '@/lib/supabase';
 import { Sidebar, TopBar } from '@/components/Navigation';
-import type { MapSelection } from '@/components/Map';
+import type { MapSelection, TerminalTypeFilters } from '@/components/Map';
+import {
+  DEFAULT_TERMINAL_FILTERS,
+  TERMINAL_TYPE_META,
+  TERMINAL_TYPES,
+  type TerminalType,
+} from '@/lib/terminalTypes';
 
 // Dynamic import for Map to avoid SSR issues
 const Map = dynamic(() => import('@/components/Map'), { 
@@ -34,8 +40,10 @@ export default function Home() {
   const [filters, setFilters] = useState({
     terminals: true,
     boundaries: false,
-    highways: false
+    highways: false,
   });
+  const [terminalTypeFilters, setTerminalTypeFilters] =
+    useState<TerminalTypeFilters>(DEFAULT_TERMINAL_FILTERS);
 
   useEffect(() => {
     fetchAlerts();
@@ -98,6 +106,7 @@ export default function Home() {
           <div className="absolute inset-0 z-10">
             <Map
               showTerminals={filters.terminals}
+              terminalTypeFilters={terminalTypeFilters}
               showBoundaries={filters.boundaries}
               showHighways={filters.highways}
               selection={mapSelection}
@@ -129,7 +138,7 @@ export default function Home() {
               </button>
               
               {/* Layer Filters Menu */}
-              <div className="absolute right-0 top-12 bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-2xl border border-outline-variant w-48 hidden group-hover:block hover:block transition-all z-50">
+              <div className="absolute right-0 top-12 bg-white/95 backdrop-blur-md p-3 rounded-2xl shadow-2xl border border-outline-variant w-56 hidden group-hover:block hover:block transition-all z-50">
                 <p className="text-[10px] font-bold text-outline uppercase tracking-widest mb-2 px-1">Map Filters</p>
                 <div className="space-y-1">
                   <FilterToggle 
@@ -137,6 +146,23 @@ export default function Home() {
                     active={filters.terminals} 
                     onClick={() => setFilters({...filters, terminals: !filters.terminals})} 
                   />
+                  {filters.terminals && (
+                    <div className="pl-2 ml-1 border-l-2 border-slate-100 space-y-0.5">
+                      {TERMINAL_TYPES.map((type) => (
+                        <TerminalTypeToggle
+                          key={type}
+                          type={type}
+                          active={terminalTypeFilters[type]}
+                          onClick={() =>
+                            setTerminalTypeFilters((prev) => ({
+                              ...prev,
+                              [type]: !prev[type],
+                            }))
+                          }
+                        />
+                      ))}
+                    </div>
+                  )}
                   <FilterToggle 
                     label="City Boundaries" 
                     active={filters.boundaries} 
@@ -396,7 +422,34 @@ function FilterToggle({ label, active, onClick }: { label: string, active: boole
       }`}
     >
       <span>{label}</span>
-      <div className={`w-3 h-3 rounded-full border-2 ${active ? 'bg-blue-600 border-blue-700' : 'border-slate-300'}`}></div>
+      <div className={`w-3 h-3 rounded-full border-2 ${active ? 'bg-blue-600 border-blue-700' : 'border-slate-300'}`} />
+    </button>
+  );
+}
+
+function TerminalTypeToggle({
+  type,
+  active,
+  onClick,
+}: {
+  type: TerminalType;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const meta = TERMINAL_TYPE_META[type];
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+        active ? 'bg-slate-50 text-slate-800' : 'text-slate-400 line-through'
+      }`}
+    >
+      <span
+        className="w-2.5 h-2.5 rounded-full shrink-0 border border-white shadow-sm"
+        style={{ backgroundColor: meta.color }}
+      />
+      <span>{meta.label}</span>
     </button>
   );
 }
